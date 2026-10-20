@@ -81,3 +81,15 @@ cd ~/gf-customizer-preview
 curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/aea98c9b33a78f020877a01784e458e7afab0027/experimental/live-integration/test_rules.py -o test_rules.py
 python3 test_rules.py server-original.mjs
 ```
+
+## 격리 HTTP 계약 검사 (개발 전용)
+
+GitHub의 `test_http_isolated.py`는 **패치본에서 추출한 설정 핸들러를 모의 HTTP 어댑터에 연결**하고 실행 중인 마리나라 컨테이너 안의 Node.js로 `127.0.0.1` 임의 포트에서 GET/POST 요청을 검증합니다. 운영 Gacha Forge 서버의 실제 라우팅·HTTP 상태 코드·인증 프록시·파일 저장 성공을 검사하는 것이 **아닙니다**. 실제 데이터나 패키지 파일을 변경하지 않습니다.
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/9a84d8798d4b27fd389855c6160a4da4c33947d0/experimental/live-integration/test_http_isolated.py -o test_http_isolated.py
+python3 test_http_isolated.py server-test.mjs
+```
+
+테스트 결과가 통과해도 운영 서버 패치 설치는 금지합니다. **실제 라우팅/권한과 배너 스케줄 동작을 추가로 검증해야 합니다.**
