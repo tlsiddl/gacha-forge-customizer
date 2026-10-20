@@ -25,7 +25,8 @@
     } catch { return fresh(); }
   }
   let data = read(), panel = null, button = null, timer = null, closed = false;
-  const isGacha = () => !closed && !!document.querySelector('[class*="gacha-forge"],[class*="gachaForge"],[class*="gacha_forge"],[data-gacha-forge],#gacha-forge-root');
+  // Keep the settings entry visible: Gacha Forge's actual root need not expose a gacha-specific selector.
+  const isGacha = () => !closed;
   function show() {
     if (!document.body) return;
     const visible = isGacha();
