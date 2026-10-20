@@ -181,3 +181,17 @@ curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/283a4d
 python3 patch.py server-original.mjs server-test.mjs
 python3 test_exchange.py server-test.mjs
 ```
+
+
+## 교환 상점 미리보기 UI
+
+개인 확장의 설정 패널에 Glimmer 정가 교환 상점 **미리보기**가 추가되었습니다. 4성 100, 5성 300 Glimmer의 기본 규칙을 표시합니다. 구매 버튼은 비활성화되어 실제 결제/재화 변경을 하지 않습니다. 현재 캐릭터 목록, 보유 정보, 누적 교환 횟수, 최대 돌파 상태의 서버 조회 기능은 연결되지 않았습니다.
+
+**보안 차단:** 현재 시험 `/gf-customizer/exchange` 서버 API에는 실제 호출자와 요청된 runId의 소유권을 검증하는 연결이 없습니다. `Ae(registry,runId)`는 세션의 존재만 확인하므로 소유권 검증으로 간주하면 안 됩니다. 또한 HTTP 재시도·동시 실행에 대한 멱등성 처리가 검증되지 않았습니다. 이 문제를 해결하기 전 **서버 패치를 운영 환경에 절대 설치하지 마세요**.
+
+시험 UI의 JavaScript 문법 확인 (기존 Docker의 Node.js 활용):
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/b5a34ea1051bc6b1ea817ea0f0e28081f1bdbc8b/experimental/live-integration/extension.js -o extension.js
+docker exec -i marinara-engine-marinara-1 node --check - < extension.js
+```
