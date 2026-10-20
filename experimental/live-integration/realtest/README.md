@@ -11,6 +11,7 @@ npm i --no-save playwright-core@1.56 && npx playwright install chromium
 node test-server.mjs server-patched.mjs              # 교환·목록 서버 보안/정합성 13항목
 node realgame.mjs ../extension.js Gacha-Forge-Quest-Extension/extension.js shot            # 구매 꺼짐, PC+폰 가로
 node realgame.mjs ../extension.js Gacha-Forge-Quest-Extension/extension.js shot --enable   # 구매 켜짐 흐름 포함
+node themes.mjs ../extension.js theme   # HUD 스타일 5종(vanguard·aurora·bloom·signal·ember) 스크린샷
 ```
 
 환경 변수: `GF_PKG_DIR`(패키지 폴더), `CHROME_PATH`(Chromium 경로), `GF_SERVER`(패치된 서버 파일).

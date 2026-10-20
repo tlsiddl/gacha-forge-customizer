@@ -184,8 +184,8 @@
 .gfc-shop .sh-card.sh-look{border-top-color:var(--epic,#a77bff)}
 .gfc-shop .sh-card.sh-look.gfc-r5{border-top-color:var(--amber,#e9b44c)}
 .gfc-shop .sh-card.sh-look.gfc-max{opacity:.62}
-.gfc-shop .gfc-r5 .sh-photo-none{background:radial-gradient(120% 80% at 50% 0%,color-mix(in srgb,var(--amber,#e9b44c) 30%,#26364E) 0%,#141D2B 70%);color:color-mix(in srgb,var(--amber,#e9b44c) 55%,#C7D3E2)}
-.gfc-shop .gfc-r4 .sh-photo-none{background:radial-gradient(120% 80% at 50% 0%,color-mix(in srgb,var(--epic,#a77bff) 26%,#26364E) 0%,#141D2B 72%);color:color-mix(in srgb,var(--epic,#a77bff) 50%,#C7D3E2)}
+.gfc-shop .gfc-r5 .sh-photo-none{background:radial-gradient(120% 80% at 50% 0%,color-mix(in srgb,var(--amber,#e9b44c) 30%,var(--ink-3,#26364E)) 0%,var(--ink,#141D2B) 70%);color:color-mix(in srgb,var(--amber,#e9b44c) 55%,var(--text,#C7D3E2))}
+.gfc-shop .gfc-r4 .sh-photo-none{background:radial-gradient(120% 80% at 50% 0%,color-mix(in srgb,var(--epic,#a77bff) 26%,var(--ink-3,#26364E)) 0%,var(--ink,#141D2B) 72%);color:color-mix(in srgb,var(--epic,#a77bff) 50%,var(--text,#C7D3E2))}
 .gfc-stars{position:absolute;top:calc(var(--f,10px)*.35);left:calc(var(--f,10px)*.45);z-index:1;font-size:var(--t-sm,13px);line-height:1;letter-spacing:.5px}
 .gfc-r5 .gfc-stars{color:var(--amber,#e9b44c);text-shadow:0 0 6px color-mix(in srgb,var(--amber,#e9b44c) 60%,transparent)}
 .gfc-r4 .gfc-stars{color:var(--epic,#a77bff);text-shadow:0 0 6px color-mix(in srgb,var(--epic,#a77bff) 55%,transparent)}
@@ -193,7 +193,7 @@
   font-size:var(--t-tiny,11px);letter-spacing:.08em;padding:calc(var(--f,10px)*.12) calc(var(--f,10px)*.45);background:color-mix(in srgb,var(--ink,#0e1420) 78%,transparent);
   color:var(--text,#e8ecf6);border-radius:var(--radius-sm,3px)}
 .gfc-badge.-new{background:var(--coral,#f2643c);color:var(--on-coral,#fff)}
-.gfc-shop .sh-buy.gfc-arm{background:var(--amber,#e9b44c);border-color:var(--amber,#e9b44c);color:#141D2B}
+.gfc-shop .sh-buy.gfc-arm{background:transparent;border-color:var(--coral,#f2643c);color:var(--coral,#f2643c);box-shadow:inset 0 0 0 1px var(--coral,#f2643c)}
 .gfc-shop .sh-buy[disabled]{cursor:default}
 .gfc-manual{display:flex;align-items:center;gap:var(--sp-1,5px);flex-wrap:wrap}
 .gfc-manual input,.gfc-num input{background:var(--ink-3,#1e2a40);border:1px solid var(--steel-dark,#34435e);color:var(--text,#e8ecf6);font-family:var(--display,inherit);
