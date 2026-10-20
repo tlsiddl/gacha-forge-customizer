@@ -105,3 +105,24 @@ python3 test_banner_rotation.py server-original.mjs server-test.mjs
 ```
 
 이 테스트는 원본 패키지나 데이터베이스를 수정하지 않습니다. **`hl()`의 실제 저장 및 스케줄러 자동 호출, 캐릭터/무기 배너의 게임 화면 반영은 검증하지 않습니다.** 또한 기존 배너가 14일로 남아 있는데 설정을 7일로 변경하면 상태 응답의 `days`는 7, 기존 `endsAt`은 원래 값으로 표시될 수 있습니다. 이는 표시 일수의 의미를 재검토해야 할 UI 문제입니다.
+
+## 배너 기간 표시 수정 (2026-10-20)
+
+진행 중인 배너의 `days`는 실제 `startedAt`과 `endsAt`의 차이로 표시하고, 새 배너가 없을 때만 현재 설정값을 사용하도록 수정했습니다. 따라서 기존 14일 배너 도중 7일로 설정을 바꾸어도 기존 배너는 **14일**, 새로 생성한 배너는 **7일**로 표시됩니다.
+
+`hl()`은 가챠 관련 요청에서 호출되는 사실을 원본 코드에서 확인했습니다. 아직 주기적 백그라운드 스케줄러의 존재를 확인하지 못했으므로, 이 기능을 '요청 없이 자동 교체'로 설명하지 않습니다. 원본의 실제 저장 함수 `Pe()`와 배너 문서 갱신 경로는 운영 전 격리 검증이 필요합니다.
+
+기존 `server-test.mjs`는 **이전 패치로 만든 파일**입니다. 아래처럼 최신 `patch.py`로 다시 생성해야 새 테스트와 일치합니다.
+
+```bash
+cd ~/gf-customizer-preview
+BASE="https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/main/experimental/live-integration"
+curl -fL "$BASE/patch.py" -o patch.py
+curl -fL "$BASE/test_rules.py" -o test_rules.py
+curl -fL "$BASE/test_banner_rotation.py" -o test_banner_rotation.py
+python3 patch.py server-original.mjs server-test.mjs
+python3 test_rules.py server-original.mjs
+python3 test_banner_rotation.py server-original.mjs server-test.mjs
+```
+
+모든 명령은 운영 가챠포지 파일이나 데이터베이스를 수정하지 않습니다.
