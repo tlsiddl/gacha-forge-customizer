@@ -26,7 +26,17 @@
   }
   let data = read(), panel = null, button = null, timer = null, closed = false;
   // Keep the settings entry visible: Gacha Forge's actual root need not expose a gacha-specific selector.
-  const isGacha = () => !closed;
+  const isGacha = () => {
+    if (closed) return false;
+    // The shell keeps other browser tabs mounted; check the active address, not mere DOM existence.
+    const candidates = [window.location.pathname, window.location.hash];
+    const address = document.querySelector('input[value*="marinara/gacha-forge"], [aria-label*="주소"]');
+    if (address && typeof address.value === 'string') candidates.push(address.value);
+    if (candidates.some(v => /(?:^|[\\/])gacha-forge(?:[\\/?#]|$)/i.test(String(v || '')))) return true;
+    // Fallback: only the selected navigation tab, never an inactive Gacha Forge tab.
+    return Array.from(document.querySelectorAll('[role="tab"][aria-selected="true"], [aria-current="page"]'))
+      .some(el => /gacha\\s*forge|가챠\\s*포지/i.test((el.textContent || '').trim()));
+  };
   function show() {
     if (!document.body) return;
     const visible = isGacha();
