@@ -15,7 +15,7 @@ original=Path(args.original).read_text()
 patched=Path(args.patched).read_text()
 assert "endsAt:n+Wu" in take(original), "Original banner function signature mismatch"
 assert "endsAt:n+GF_SETTINGS.bannerDays*24*60*60*1e3" in take(patched), "Patch is missing banner duration"
-assert "days:GF_SETTINGS.bannerDays" in take(patched), "Patch is missing banner label"
+assert "days:r&&Number(r.endsAt)>Number(r.startedAt)?" in take(patched), "Patch is missing banner label"
 script=r"""const assert=require("node:assert/strict");
 const DAY=86400000,now=1780000000000;
 const Wu=14*DAY;
@@ -30,12 +30,13 @@ GF_SETTINGS.bannerDays=7;
 const status=modified.ht(initial,now);
 assert.equal(status.endsAt,initial.featured.endsAt,"existing expiration must not change");
 assert.equal(status.expired,false);
-assert.equal(status.days,7,"label reflects configured *new* duration");
+assert.equal(status.days,14,"existing banner should retain its actual 14-day duration");
 assert.equal(modified.ht(initial,initial.featured.endsAt-1).expired,false);
 assert.equal(modified.ht(initial,initial.featured.endsAt).expired,true);
 const rotated=modified.cy(initial,initial.featured.endsAt);
 assert.deepEqual(rotated,{seq:4,startedAt:initial.featured.endsAt,endsAt:initial.featured.endsAt+7*DAY});
 assert.equal(modified.ht({featured:rotated},rotated.startedAt+7*DAY).expired,true);
+assert.equal(modified.ht({featured:rotated},rotated.startedAt).days,7);
 assert.equal(modified.ht({featured:rotated},rotated.startedAt+7*DAY-1).expired,false);
 const constructed=modified.ly({
  startedAt:rotated.startedAt,endsAt:rotated.endsAt,key:"f4",mode:modified.ow(4),
