@@ -27,53 +27,53 @@ Marinara Engine의 **Gacha Forge 1.8.12**용 비공식 커스터마이저입니�
 
 ## 구성
 
-두 부분으로 되어 있고, **둘 다** 설치해야 합니다.
+두 부분으로 되어 있고, **둘 다** 설치해야 합니다. 모든 파일은 이 저장소 맨 위에 있습니다.
 
-1. **개인 확장** (`manifest.json`, `extension.js`): 게임 화면에 섹션을 추가합니다.
-2. **서버 패치** (`gf-customizer-runtime.cjs`, `gf-customizer-edits.json`): 서버가 켜질 때 Gacha Forge 서버 코드를 **메모리 안에서만** 고칩니다. 설치된 게임 파일과 세이브는 수정하지 않습니다. 코드가 1.8.12와 정확히 일치하지 않으면 패치는 적용되지 않고 게임은 원래대로 동작합니다.
-
-파일은 모두 [`experimental/live-integration/`](experimental/live-integration)에 있습니다.
+| 파일 | 역할 |
+|---|---|
+| `manifest.json`, `extension.js` | **확장** — 게임 화면에 섹션을 추가합니다 |
+| `gf-customizer-runtime.cjs`, `gf-customizer-edits.json` | **서버 패치** — 서버가 켜질 때 Gacha Forge 서버 코드를 메모리 안에서만 고칩니다. 게임 파일과 세이브는 수정하지 않습니다. 1.8.12와 정확히 일치하지 않으면 적용하지 않고 게임은 원래대로 동작합니다 |
+| `docker-compose.gf-customizer.example.yml` | 서버 패치용 Docker Compose 추가 파일 |
+| `patch.py` | 원본 `server.mjs`에서 `gf-customizer-edits.json`을 다시 만드는 생성기(설치에는 필요 없음) |
 
 ## 요구 사항
 
 - Marinara Engine **2.5.0**
 - Gacha Forge **1.8.12** (다른 버전이면 서버 패치가 자동으로 꺼집니다)
-- Node.js 22.15 이상 (Marinara 공식 Docker 이미지는 Node 24)
-- Marinara에서 외부 확장 가져오기 허용
+- 서버 패치: Docker로 실행하는 Marinara (공식 이미지는 Node 24라 그대로 됩니다)
 
 ## 설치
 
-### 1. 개인 확장
+### 1. 확장
 
-1. 서버 `.env`에 `ENABLE_EXTERNAL_EXTENSIONS=true`를 넣고 Marinara를 다시 시작합니다.
-2. **Settings → Advanced → Danger Zone**에서 **Allow third-party extension imports**를 켭니다.
-   휴대폰이나 다른 기기에서 접속한다면 서버의 `ADMIN_SECRET`과 같은 값을 **Settings → Advanced → Admin Access**에 넣어야 합니다.
-3. `experimental/live-integration`의 `manifest.json`과 `extension.js` 두 파일을 한 폴더에 넣습니다(또는 그 둘만 ZIP으로 묶습니다).
-4. **Settings → Addons → External Extensions → Import Folder**(또는 ZIP)로 가져옵니다.
-5. 코드를 확인한 뒤 **Review and Run**으로 켭니다. 이 확장은 게임 화면에 들어가야 해서 **Full page access** 권한을 씁니다.
+GitHub 확장 관리자에 이 저장소 주소를 넣어 설치합니다.
 
-### 2. 서버 패치 — Docker (확인된 방식)
+```
+https://github.com/tlsiddl/gacha-forge-customizer
+```
 
-Marinara의 `docker-compose.yml`이 있는 폴더에서 실행합니다.
+게임 화면 안에 들어가야 해서 **Full page access** 권한을 씁니다.
+
+### 2. 서버 패치 (Docker)
+
+Marinara의 `docker-compose.yml`이 있는 폴더에서 아래를 그대로 붙여 넣습니다.
 
 ```bash
 mkdir -p gf-customizer
-BASE=https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/main/experimental/live-integration
+BASE=https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/main
 curl -fL "$BASE/gf-customizer-runtime.cjs" -o gf-customizer/gf-customizer-runtime.cjs
 curl -fL "$BASE/gf-customizer-edits.json"  -o gf-customizer/gf-customizer-edits.json
-curl -fL "$BASE/docker-compose.gf-customizer.example.yml" -o docker-compose.gf-customizer.yml
+[ -e docker-compose.gf-customizer.yml ] || curl -fL "$BASE/docker-compose.gf-customizer.example.yml" -o docker-compose.gf-customizer.yml
+docker compose -f docker-compose.yml -f docker-compose.gf-customizer.yml up -d --force-recreate
 ```
 
-`docker-compose.gf-customizer.yml`을 열어 확인합니다. **이미 `NODE_OPTIONS`를 쓰고 있다면**(다른 패치를 `--require`로 넣고 있다면) 기존 값 끝에 ` --require=/app/gf-customizer-runtime.cjs`를 이어 붙인 값으로 바꿔야 합니다. 그대로 덮어쓰면 기존 패치가 빠집니다.
-
-그다음 기존에 쓰던 Compose 파일 **모두**에 이 파일을 더해서 다시 띄웁니다.
+게임을 한 번 연 뒤 확인합니다.
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.gf-customizer.yml up -d --force-recreate
-docker compose -f docker-compose.yml -f docker-compose.gf-customizer.yml logs --tail 200 | grep -E "gf-customizer|gacha-forge@"
+docker compose -f docker-compose.yml -f docker-compose.gf-customizer.yml logs --tail 300 | grep -E "gf-customizer|gacha-forge@"
 ```
 
-게임을 한 번 연 뒤 다음 두 줄이 보이면 성공입니다.
+다음 두 줄이 보이면 성공입니다.
 
 ```
 [gf-customizer] applied 14 edits in memory, preserving upstream hook output
@@ -82,19 +82,12 @@ Activated and verified capability package gacha-forge@1.8.12
 
 `fail closed`가 보이면 Gacha Forge 버전이 다른 것입니다. 패치는 꺼지고 게임은 원래대로 동작합니다.
 
-### 2-1. 서버 패치 — Docker 없이 실행 (확인되지 않음)
+**그대로 붙여 넣으면 안 되는 경우**
 
-`start.bat` / `start.sh`로 실행한다면, Marinara를 시작하는 같은 창에서 환경 변수를 넣고 시작합니다. 경로에 공백이 없는 폴더를 쓰세요.
-
-```bat
-:: Windows 예시
-set NODE_OPTIONS=--require=C:\gf-customizer\gf-customizer-runtime.cjs
-set GF_CUSTOMIZER_EDITS_PATH=C:\gf-customizer\gf-customizer-edits.json
-set GF_CUSTOMIZER_CONFIG_FILE=C:\gf-customizer\settings.json
-start.bat
-```
-
-이 방식은 아직 실제로 해 보지 않았습니다. 해 보신 분은 결과를 알려 주세요.
+- **다른 서버 패치를 이미 `NODE_OPTIONS`로 쓰고 있다면** (한글화·CG 패치 등): `docker-compose.gf-customizer.yml`의 `NODE_OPTIONS` 줄을, 기존 값 끝에 ` --require=/app/gf-customizer-runtime.cjs`를 붙인 값으로 바꾼 뒤 `up` 명령을 실행하세요. 그대로 두면 기존 패치가 빠집니다.
+- **Compose 파일을 여러 개 쓰고 있다면**: `up`과 `logs` 명령에 기존 `-f` 파일을 모두 넣고, 맨 뒤에 `-f docker-compose.gf-customizer.yml`을 더하세요.
+- **서비스 이름이 `marinara`가 아니라면**: `docker-compose.gf-customizer.yml`의 `marinara:`를 그 이름으로 바꾸세요.
+- **Docker 없이 실행한다면**: 아직 지원을 확인하지 못했습니다.
 
 ## 사용법
 
@@ -113,7 +106,8 @@ start.bat
 
 ## 업데이트와 제거
 
-- **업데이트**: 같은 파일을 새로 받아 덮어쓰고 다시 띄웁니다. 확장은 같은 이름으로 다시 가져오면 갱신되며, 다시 **Review and Run**이 필요합니다.
+- **확장 업데이트**: GitHub 확장 관리자에서 업데이트합니다.
+- **서버 패치 업데이트**: 설치 블록의 `curl` 두 줄(`gf-customizer-runtime.cjs`, `gf-customizer-edits.json`)과 `up` 명령을 다시 실행합니다. 구매 켜기 설정이 들어 있는 `docker-compose.gf-customizer.yml`은 덮어쓰지 않습니다.
 - **제거**: 확장을 끄고, Compose 명령에서 `-f docker-compose.gf-customizer.yml`을 빼고 다시 띄웁니다. 게임 파일을 바꾼 적이 없어서 바로 원래 상태가 됩니다. 이미 교환한 캐릭터와 쓴 Glimmer는 세이브에 그대로 남습니다.
 
 ## 안전
@@ -133,7 +127,7 @@ start.bat
 
 ## 테스트
 
-`experimental/live-integration/tests/`
+`tests/`
 
 | 테스트 | 내용 |
 |---|---|
@@ -144,7 +138,7 @@ start.bat
 | `realtest/realgame.mjs` | **실제 게임 클라이언트**를 Chromium에서 띄워 PC·폰 가로 화면 확인 |
 | `realtest/themes.mjs` | HUD 스타일 5종 스크린샷 |
 
-실행 방법은 [`realtest/README.md`](experimental/live-integration/tests/realtest/README.md)에 있습니다.
+실행 방법은 [`realtest/README.md`](tests/realtest/README.md)에 있습니다.
 
 ## 변경 기록
 

@@ -3,7 +3,7 @@
   "version": 1,
   "config": {
     "name": "Gacha Forge · Customizer",
-    "version": "0.6.1-dev",
+    "version": "0.6.1",
     "description": "Gacha Forge 1.8.12 설정·상점에 천장·픽업 확정·풀 패싯 보상 설정과 Glimmer 캐릭터 교환을 게임 디자인 그대로 추가 (가로 화면)",
     "runtime": "client",
     "capabilities": [

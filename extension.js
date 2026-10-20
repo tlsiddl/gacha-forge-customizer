@@ -1,4 +1,4 @@
-/* Gacha Forge · Customizer v0.6.1-dev — personal extension for Gacha Forge 1.8.12 on Marinara Engine 2.5.0.
+/* Gacha Forge · Customizer v0.6.1 — personal extension for Gacha Forge 1.8.12 on Marinara Engine 2.5.0.
  * Adds "커스터마이저" to the game's Settings rail and "Glimmer 교환" to its Shop rail, drawn with the game's own
  * classes (st-sect / st-plate, sh-cat / sh-card) so both look like part of the game. Landscape only, like the game.
  * Purchases happen only when the server switches them on; otherwise the shop is read-only. */

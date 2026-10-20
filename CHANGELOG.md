@@ -1,12 +1,13 @@
 # 변경 기록
 
-## 0.6.1-dev — 2026-10-21
+## 0.6.1 — 2026-10-21
 
 - HUD 스타일 5종(Vanguard·Aurora·Bloom·Signal·Ember)에 맞게 초상화 없는 카드 배경과 "한 번 더" 버튼 색을 테마 값으로 변경.
 - 서버 패치 로더: Windows 경로(`\`)도 인식, `module.registerHooks`가 없는 Node에서는 시작을 막지 않고 꺼지도록 변경.
 - 설정 파일 기본 위치를 `DATA_DIR` 기준으로 변경 (Docker에서는 이전과 같은 `/app/data/gacha-customizer-settings.json`).
 - 미리 만든 `gf-customizer-edits.json`을 저장소에 포함 — Python 없이 설치 가능.
-- 저장소 정리: 테스트는 `tests/`, 이전 스크립트는 `legacy/`, 개발 기록은 `docs/HISTORY.md`. 오래된 루트 확장과 위험한 초기 시제품(`experimental/server-patch`) 삭제.
+- 저장소 정리: 배포 파일을 저장소 루트로 이동(GitHub 확장 관리자로 바로 설치), 테스트는 `tests/`, 이전 스크립트는 `legacy/`, 개발 기록은 `docs/HISTORY.md`. 오래된 확장과 위험한 초기 시제품(`experimental/server-patch`) 삭제.
+- 버전 표기에서 `-dev` 제거.
 
 ## 0.6.0-dev — 2026-10-21
 
