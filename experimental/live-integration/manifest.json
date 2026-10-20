@@ -1,6 +1,6 @@
 {
   "kind": "marinara.personal-extension",
-  "version": 1,
+  "version": "0.5.0-dev",
   "config": {
     "name": "Gacha Forge · Customizer",
     "version": "0.4.2-dev",
