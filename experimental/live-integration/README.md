@@ -195,3 +195,16 @@ cd ~/gf-customizer-preview
 curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/b5a34ea1051bc6b1ea817ea0f0e28081f1bdbc8b/experimental/live-integration/extension.js -o extension.js
 docker exec -i marinara-engine-marinara-1 node --check - < extension.js
 ```
+
+
+## 캐릭터 조회 ID 구조와 격리 테스트
+
+원본 Gacha Forge 1.8.12의 단위 문서는 `runId:unit:unitKey` 형태의 전체 ID로 저장되며, 세션 `roster`도 전체 ID를 키로 사용합니다. 조회 API는 `a.list(packageId,"unit")` 중 선택된 `runId:unit:` 접두어에 해당하는 문서만 표시하도록 작성했습니다. 모의 테스트는 다른 세션, 무기, 최대 돌파 여부, 캐릭터별 교환 횟수 및 인증 실패 시 자료 조회 차단을 확인합니다.
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/b6437711c19b2dbca7db4b782bff4833c00575b8/experimental/live-integration/test_catalog.py -o test_catalog.py
+python3 test_catalog.py server-test.mjs
+```
+
+**경고:** 관리자 비밀키를 브라우저에 입력하는 현 설계는 운영용 인증 구조가 아닙니다. 별도의 세션 소유권 검증 및 서버 측 안전한 인증 후에만 출시해야 합니다. 이 모의 테스트가 실제 API 보호·개인정보 격리·브라우저 실행을 입증하지는 않습니다.
