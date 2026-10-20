@@ -38,6 +38,36 @@ console.log("PASS native default equivalence and custom hard pity");
 '''
     test=Path(temp)/"test.cjs";test.write_text(testjs)
     node_check(test.read_text())
+    # Extract the exact injected validation/save code, then mock filesystem operations.
+    nstart=patched.index("function gfNormalize(")
+    nend=patched.index("let GF_SETTINGS=",nstart)
+    save_start=patched.index("function gfSave(")
+    save_end=patched.index("var rb=[",save_start)
+    normalize_fn=patched[nstart:nend]
+    save_fn=patched[save_start:save_end]
+    api_test = r'''const assert=require("node:assert/strict");
+const GF_DEFAULT=Object.freeze({bannerDays:14,characterPity:80,weaponPity:80,featuredGuarantee:false,fullFacetGlimmer4:0,fullFacetGlimmer5:0});
+let GF_SETTINGS={...GF_DEFAULT},writes=[],failWrite=false;
+const GF_FILE="/mock/settings.json",gfDirname=()=>"/mock",gfMkdir=()=>{};
+const gfWriteFile=(name,data,opts)=>{if(failWrite)throw Error("disk full");writes.push({name,data,opts})};
+const gfRenameFile=(a,b)=>{writes.push({rename:[a,b]})};
+const process={pid:100};
+'''+normalize_fn+save_fn+r'''
+for (const [key,value] of [["bannerDays",0],["bannerDays",31],["characterPity",101],["weaponPity",1.5],["featuredGuarantee","yes"],["fullFacetGlimmer5",-1]]){
+ assert.throws(()=>gfNormalize({...GF_DEFAULT,[key]:value}),/invalid/);
+}
+assert.deepEqual(gfNormalize({}),GF_DEFAULT);
+const updated=gfSave({...GF_DEFAULT,characterPity:40,featuredGuarantee:true});
+assert.equal(GF_SETTINGS.characterPity,40);
+assert.equal(writes[0].opts.mode,0o600);
+assert.deepEqual(JSON.parse(writes[0].data),updated);
+const previous={...GF_SETTINGS};failWrite=true;
+assert.throws(()=>gfSave({...updated,characterPity:50}),/disk full/);
+assert.deepEqual(GF_SETTINGS,previous);
+console.log("PASS settings validation, save permissions, mocked persistence failure");
+'''
+    api=Path(temp)/"api-test.cjs";api.write_text(api_test)
+    node_check(api.read_text())
     twice=subprocess.run(["python3",str(root/"patch.py"),str(target),str(Path(temp)/"again.mjs")],capture_output=True)
     assert twice.returncode!=0,"Patch must reject double application"
     assert src.read_text()==original,"Original must remain untouched"
