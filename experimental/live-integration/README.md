@@ -93,3 +93,15 @@ python3 test_http_isolated.py server-test.mjs
 ```
 
 테스트 결과가 통과해도 운영 서버 패치 설치는 금지합니다. **실제 라우팅/권한과 배너 스케줄 동작을 추가로 검증해야 합니다.**
+
+## 배너 교체 함수 회귀 테스트
+
+`test_banner_rotation.py`는 사용자가 제공한 **원본**과 **패치본**에서 `ht()`·`cy()`·`ly()`·`ow()` 함수를 그대로 추출해 Node.js에서 검사합니다. 14일 기본 동작, 7일 설정 변경 이후 신규 배너 기간, 기존 배너 만료일 유지, 만료 경계, 회차 번호 증가, 캐릭터/무기 배너의 일치된 종료일을 확인합니다.
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/01b82f9ea16f6b7c739c3ba6c61255a157909968/experimental/live-integration/test_banner_rotation.py -o test_banner_rotation.py
+python3 test_banner_rotation.py server-original.mjs server-test.mjs
+```
+
+이 테스트는 원본 패키지나 데이터베이스를 수정하지 않습니다. **`hl()`의 실제 저장 및 스케줄러 자동 호출, 캐릭터/무기 배너의 게임 화면 반영은 검증하지 않습니다.** 또한 기존 배너가 14일로 남아 있는데 설정을 7일로 변경하면 상태 응답의 `days`는 7, 기존 `endsAt`은 원래 값으로 표시될 수 있습니다. 이는 표시 일수의 의미를 재검토해야 할 UI 문제입니다.
