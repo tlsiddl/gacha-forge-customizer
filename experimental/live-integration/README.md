@@ -258,3 +258,16 @@ python3 patch.py server-original.mjs server-test.mjs
 python3 test_exchange.py server-test.mjs
 python3 test_exchange_concurrency.py server-test.mjs
 ```
+
+
+## 실제 Pe 저장 계약 검사
+
+`test_storage_contract.py`는 제공된 **원본** `server.mjs`의 `Pe()` 함수를 그대로 추출하고, 모의 `a.update`에 `expectedRevision`이 전달되는지 확인합니다. 같은 옛 revision을 사용한 두 번째 저장이 모의 CAS에서 거절되는 상황을 재현합니다. **운영 저장소의 실제 구현은 검증하지 않습니다.**
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/5f3f86487e2f0c2585168b358fc50d73d1ca41f4/experimental/live-integration/test_storage_contract.py -o test_storage_contract.py
+python3 test_storage_contract.py server-original.mjs
+```
+
+**배포 차단:** `GF_CUSTOMIZER_ENABLE_EXCHANGE` 환경변수 게이트를 켜더라도 관리자 키는 플레이어별 게임 세션 인증이 아닙니다. 마리나라 호스트에서 검증된 사용자 ID와 세션 접근 권한 정보를 전달해 주는 공식 경로를 찾고 실제 보호 로직을 검증하기 전에는 운영 구매를 활성화하지 않습니다.
