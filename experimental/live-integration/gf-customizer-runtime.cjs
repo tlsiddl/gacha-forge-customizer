@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const crypto=require('node:crypto');
 const {registerHooks}=require('node:module');
 const {fileURLToPath}=require('node:url');
-const TARGET=/\/capability-runtime-snapshots\/gacha-forge-1\.8\.12-[^/]+\/server\.mjs$/;
+const TARGET=/[\\/]capability-runtime-snapshots[\\/]gacha-forge-1\.8\.12-[^\\/]+[\\/]server\.mjs$/; // \ or / so Windows paths match too
 const RECIPE=process.env.GF_CUSTOMIZER_EDITS_PATH||'/app/gf-customizer-edits.json';
 const ORIGINAL_SHA256='6bd9ec1f95f5296b65e974ea723e50e59a0335efabc97b6585c0979fb6153284';
 function hash(s){return crypto.createHash('sha256').update(s).digest('hex')}
@@ -25,7 +25,7 @@ function applyEdits(source,recipe){
  return{ok:true,source:next};
 }
 if(process.env.GF_CUSTOMIZER_HOOK_TEST!=='1'){
- if(Number(process.versions.node.split('.')[0])<22){process.stderr.write('[gf-customizer] Node 22+ required; loader disabled\n')}
+ if(typeof registerHooks!=='function'){process.stderr.write('[gf-customizer] this Node.js has no module.registerHooks (need 22.15+); loader disabled, game unchanged\n')}
  else{
   let recipe;
   try{recipe=validate(JSON.parse(fs.readFileSync(RECIPE,'utf8')))}

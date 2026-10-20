@@ -3,7 +3,7 @@
 const fs=require('node:fs');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
-const recipe=JSON.parse(fs.readFileSync(process.argv[2]||'gf-customizer-edits.exchange.json','utf8'));
+const recipe=JSON.parse(fs.readFileSync(process.argv[2]||require('node:path').join(__dirname,'..','gf-customizer-edits.json'),'utf8'));
 const edit=recipe.edits.find(e=>e.new.includes('s.post("/gf-customizer/exchange",'));
 assert(edit,'exchange edit missing');
 const begin=edit.new.indexOf('s.post("/gf-customizer/exchange",');

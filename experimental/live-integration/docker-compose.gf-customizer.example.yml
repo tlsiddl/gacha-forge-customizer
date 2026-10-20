@@ -1,0 +1,15 @@
+# Gacha Forge Customizer — Docker Compose 추가 파일 예시.
+# Marinara의 docker-compose.yml 옆에 docker-compose.gf-customizer.yml 이름으로 두고,
+# 기존에 쓰던 모든 -f 파일 뒤에 -f docker-compose.gf-customizer.yml 을 더해서 실행합니다.
+# 서비스 이름(marinara)은 공식 docker-compose.yml 기준입니다. 다르면 맞게 바꾸세요.
+services:
+  marinara:
+    volumes:
+      - ./gf-customizer/gf-customizer-runtime.cjs:/app/gf-customizer-runtime.cjs:ro
+      - ./gf-customizer/gf-customizer-edits.json:/app/gf-customizer-edits.json:ro
+    environment:
+      # 이미 NODE_OPTIONS로 다른 --require 패치를 쓰고 있다면, 그 값 끝에 아래 --require를 이어 붙이세요.
+      NODE_OPTIONS: "--require=/app/gf-customizer-runtime.cjs"
+      GF_CUSTOMIZER_EDITS_PATH: "/app/gf-customizer-edits.json"
+      # "1"로 바꾸면 Glimmer 교환 구매가 켜집니다. "0"이면 목록만 표시합니다.
+      GF_CUSTOMIZER_ENABLE_EXCHANGE: "0"

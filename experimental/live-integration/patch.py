@@ -14,7 +14,7 @@ def rep(old,new):
 # Persist data under private server volume and block unauthenticated writes.
 boot='''import {readFileSync as gfReadFile,writeFileSync as gfWriteFile,renameSync as gfRenameFile,mkdirSync as gfMkdir} from "node:fs";
 import {dirname as gfDirname} from "node:path";
-const GF_FILE=process.env.GF_CUSTOMIZER_CONFIG_FILE||"/app/data/gacha-customizer-settings.json";
+const GF_FILE=process.env.GF_CUSTOMIZER_CONFIG_FILE||((process.env.DATA_DIR||"/app/data").replace(/[\\/]+$/,"")+"/gacha-customizer-settings.json");
 const GF_DEFAULT=Object.freeze({bannerDays:14,characterPity:80,weaponPity:80,featuredGuarantee:false,fullFacetGlimmer4:0,fullFacetGlimmer5:0});
 function gfNormalize(raw){let r={...GF_DEFAULT};for(const key of ["bannerDays","characterPity","weaponPity","fullFacetGlimmer4","fullFacetGlimmer5"]){if(raw&&Object.hasOwn(raw,key)){let v=raw[key];if(!Number.isInteger(v)||v<(key.startsWith("fullFacet")?0:1)||v>(key.startsWith("fullFacet")?100000: key==="bannerDays"?30:100))throw Error("invalid "+key);r[key]=v;}}if(raw&&Object.hasOwn(raw,"featuredGuarantee")){if(typeof raw.featuredGuarantee!=="boolean")throw Error("invalid featuredGuarantee");r.featuredGuarantee=raw.featuredGuarantee;}return r;}
 let GF_SETTINGS={...GF_DEFAULT};try{GF_SETTINGS=gfNormalize(JSON.parse(gfReadFile(GF_FILE,"utf8")))}catch(e){if(e.code!=="ENOENT")console.error("[gf-customizer] settings load failed; defaults kept",e.message)}

@@ -3,14 +3,14 @@
 // and, if a path is given, together with the Quest extension to check that the two fetch observers coexist.
 //
 //   npm i --no-save jsdom@24
-//   node test-extension-jsdom.cjs [path/to/Gacha-Forge-Quest-Extension/extension.js]
+//   node tests/test-extension-jsdom.cjs [path/to/Gacha-Forge-Quest-Extension/extension.js]
 //
 // What this does NOT prove: the real game's DOM/CSS on a phone, the real server's responses, or real purchases.
 const { JSDOM } = require("jsdom");
 const fs = require("fs");
 const path = require("path");
 const assert = require("assert");
-const CUST = fs.readFileSync(path.join(__dirname, "extension.js"), "utf8");
+const CUST = fs.readFileSync(path.join(__dirname, "..", "extension.js"), "utf8");
 const QUEST_PATH = process.argv[2];
 const QUEST = QUEST_PATH ? fs.readFileSync(QUEST_PATH, "utf8") : null;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
