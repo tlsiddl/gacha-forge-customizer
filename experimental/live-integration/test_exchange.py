@@ -31,7 +31,10 @@ const Pe=async(_,doc,next)=>{saveCount++;if(!saveSuccess)return false;state=next
  assert.equal(second.price,120);assert.equal(second.exchangeCount,2);
  assert.equal(second.facet.facet,1);
  assert.equal(state.wallet.glimmer,530);
+ state.wallet.glimmer=299;
+ const insufficientSnapshot=structuredClone(state);
  assert.equal((await fn({body:{runId:"valid",characterId:"c5"}})).error,"insufficient-glimmer");
+ assert.deepEqual(state,insufficientSnapshot);
  assert.equal(state.gfCustomizer.exchangeCounts.c5,undefined);
  state.wallet.glimmer=750;
  saveSuccess=false;const snapshot=structuredClone(state);
