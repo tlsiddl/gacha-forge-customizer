@@ -17,17 +17,17 @@ const GF_FILE=process.env.GF_CUSTOMIZER_CONFIG_FILE||"/app/data/gacha-customizer
 const GF_DEFAULT=Object.freeze({bannerDays:14,characterPity:80,weaponPity:80,featuredGuarantee:false,fullFacetGlimmer4:0,fullFacetGlimmer5:0});
 function gfNormalize(raw){let r={...GF_DEFAULT};for(const key of ["bannerDays","characterPity","weaponPity","fullFacetGlimmer4","fullFacetGlimmer5"]){if(raw&&Object.hasOwn(raw,key)){let v=raw[key];if(!Number.isInteger(v)||v<(key.startsWith("fullFacet")?0:1)||v>(key.startsWith("fullFacet")?100000: key==="bannerDays"?30:100))throw Error("invalid "+key);r[key]=v;}}if(raw&&Object.hasOwn(raw,"featuredGuarantee")){if(typeof raw.featuredGuarantee!=="boolean")throw Error("invalid featuredGuarantee");r.featuredGuarantee=raw.featuredGuarantee;}return r;}
 let GF_SETTINGS={...GF_DEFAULT};try{GF_SETTINGS=gfNormalize(JSON.parse(gfReadFile(GF_FILE,"utf8")))}catch(e){if(e.code!=="ENOENT")console.error("[gf-customizer] settings load failed; defaults kept",e.message)}
-function gfPity(state,rate4,rate,kind){const hard=kind==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity;const soft=Math.min(hard,Math.max(1,hard-6));const count=(state.count||0)+1;const odds=count>=hard?1:count>=soft?rate+(count-soft+1)*(1-rate)/(hard-soft+1):rate;if(Math.random()<odds){state.count=0;state.since4=0;return 5;}state.count=count;const four=(state.since4||0)+1;if(four>=10||Math.random()<rate4){state.since4=0;return 4;}state.since4=four;return 3;}
+function gfPity(state,rate5,rate4,kind){const hard=kind==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity;if(hard===80)return MA(state,rate5,rate4);const soft=Math.max(1,hard-6);const count=(state.count||0)+1;const odds=count>=hard?1:count>=soft?rate5+(count-soft+1)*(1-rate5)/(hard-soft+1):rate5;if(Math.random()<odds){state.count=0;state.since4=0;return 5;}state.count=count;const four=(state.since4||0)+1;if(four>=xA||Math.random()<rate4){state.since4=0;return 4;}state.since4=four;return 3;}
 function gfPick(state,up,pool,rate){if(GF_SETTINGS.featuredGuarantee){state.sinceFeatured=0;return up;}return RA(state,up,pool,rate);}
-function gfSave(next){const validated=gfNormalize(next);const tmp=GF_FILE+".tmp";gfMkdir(gfDirname(GF_FILE),{recursive:true});gfWriteFile(tmp,JSON.stringify(validated,null,2),{mode:0o600});gfRenameFile(tmp,GF_FILE);GF_SETTINGS=validated;return validated;}
+function gfSave(next){const validated=gfNormalize(next);const tmp=GF_FILE+"."+process.pid+".tmp";gfMkdir(gfDirname(GF_FILE),{recursive:true});gfWriteFile(tmp,JSON.stringify(validated,null,2),{mode:0o600});gfRenameFile(tmp,GF_FILE);GF_SETTINGS=validated;return validated;}
 '''
 rep('var rb=[',boot+'var rb=[')
 rep('var Wu=336*60*60*1e3;','var Wu=336*60*60*1e3;') if False else None
 rep('days:Math.round(Wu/(1440*60*1e3))','days:GF_SETTINGS.bannerDays')
 rep('endsAt:n+Wu','endsAt:n+GF_SETTINGS.bannerDays*24*60*60*1e3')
-rep('Kt=MA(U,Q,ne)','Kt=gfPity(U,ne,Q,m)')
+rep('Kt=MA(U,Q,ne)','Kt=gfPity(U,Q,ne,m)')
 rep('RA(U,x.fiveId,ee,Y)','gfPick(U,x.fiveId,ee,Y)')
-rep('In.gained||(Pt=jg(!1,Ft.rarity))','In.gained||(Pt=GF_SETTINGS["fullFacetGlimmer"+Ft.rarity]||jg(!1,Ft.rarity))')
+rep('In.gained||(Pt=jg(!1,Ft.rarity))','In.gained||(Pt=(GF_SETTINGS["fullFacetGlimmer"+Ft.rarity]===0?jg(!1,Ft.rarity):GF_SETTINGS["fullFacetGlimmer"+Ft.rarity]))')
 rep('pity:{count:U.count,soft:Ko,hard:yi,guaranteed:!!U.sinceFeatured}', 'pity:{count:U.count,soft:Math.min(m==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity,Math.max(1,(m==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity)-6)),hard:m==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity,guaranteed:!!U.sinceFeatured}')
 # Authenticated live settings update. The host request handler is not yet confirmed to expose headers;
 # use a body secret, sent transiently and NEVER stored client-side. Block if secret absent.
