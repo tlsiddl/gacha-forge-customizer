@@ -144,3 +144,25 @@ python3 test_banner_persistence.py server-test.mjs
 ```
 
 **Glimmer 정가 상점:** 현재 실제 게임 저장 로직과 중복 지급 정책을 검토 중이며 아직 기능 코드가 구현되지 않았습니다. 검증 전에는 기존 재화·로스터 데이터를 수정하지 않습니다.
+
+## Glimmer 캐릭터 정가 교환 API (실험 기능)
+
+신규 `POST /api/gacha-forge/gf-customizer/exchange` (Gacha Forge 라우트 내부: `/gf-customizer/exchange`)를 시험 패치에 추가했습니다. JSON 본문은 `{"runId":"...","characterId":"..."}` 형식입니다.
+
+* 기존 **Glimmer**를 사용하며 새 화폐를 만들지 않습니다.
+* **임시 가격: 4성 120, 5성 600 Glimmer.** 사용자 확정 가격이나 게임 원작 가격이 아닙니다.
+* 존재하지 않는 캐릭터·무기·3성 대상은 차단합니다. 신규 캐릭터는 `roster[id]={level:1,bondFights:0}`으로 기록합니다.
+* 이미 보유한 캐릭터는 원본 `vf()`로 Facet을 올립니다. 최대 Facet이면 Facet을 더 올리지 않지만 교환 비용은 차감됩니다. 최종 정책 논의가 필요합니다.
+* 잔액 차감과 캐릭터 지급은 같은 세션 문서의 사본에 적용한 뒤 **한 번의 `Pe()` revision-checked 저장**으로 요청합니다. 저장 실패 시 원본 메모리 상태를 유지합니다.
+* 실행 중 동시 구매, 여러 사용자 인증, 리플레이 방지, 실제 클라이언트 연동, 서버 영속 저장 결과는 **검증되지 않았습니다**.
+
+```bash
+cd ~/gf-customizer-preview
+BASE="https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/main/experimental/live-integration"
+curl -fL "$BASE/patch.py" -o patch.py
+curl -fL "$BASE/test_exchange.py" -o test_exchange.py
+python3 patch.py server-original.mjs server-test.mjs
+python3 test_exchange.py server-test.mjs
+```
+
+테스트는 실제 계정의 재화나 캐릭터를 지급·차감하지 않습니다. **운영 서버에 아직 설치하지 마세요.**
