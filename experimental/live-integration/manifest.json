@@ -1,0 +1,1 @@
+{"kind":"marinara.personal-extension","version":1,"config":{"name":"Gacha Forge · Customizer","version":"0.3.0-dev","description":"서버 설정 API 연동; Glimmer 교환 미구현","runtime":"client","capabilities":["full_page_access"],"jsPath":"extension.js"}}
