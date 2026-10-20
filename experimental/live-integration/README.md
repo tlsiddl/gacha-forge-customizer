@@ -71,3 +71,13 @@ python3 test_rules.py server-original.mjs
 이 명령은 원본 파일을 읽고 임시 디렉터리에서만 테스트합니다. 문법 검사와 기본/사용자 지정 천장 로직 일부만 검사합니다. **실제 서비스에 적용할 수 있다는 인증은 아닙니다.**
 
 **남은 차단 요소:** 설정 API 권한 모델, 동시 저장 경쟁, 기존 배너/미니 이벤트 주기, 설정 페이지 UX, 데이터 전송 및 저장 안전성, Glimmer 정가 교환을 검증하기 전에는 운영 환경 설치를 금지합니다.
+
+### 추가 오프라인 검증
+
+`test_rules.py`는 Node.js가 호스트에 없어도 현재 실행 중인 Marinara Docker 컨테이너의 Node.js를 이용합니다. 별도 서버 파일과 실제 설정 파일을 수정하지 않고, 코드에서 추출한 설정 유효성 검사·저장 함수에 모의 파일시스템을 연결해 비정상 값 거부, 저장 파일 권한, 저장 실패 시 기존 설정 유지를 검사합니다. **실제 HTTP API 통신과 디스크 저장의 성공 여부를 검증하는 테스트는 아닙니다.**
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/aea98c9b33a78f020877a01784e458e7afab0027/experimental/live-integration/test_rules.py -o test_rules.py
+python3 test_rules.py server-original.mjs
+```
