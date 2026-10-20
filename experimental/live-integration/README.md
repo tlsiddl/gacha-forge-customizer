@@ -1,35 +1,59 @@
-# 통합 서버 연동 시험판 — 검증 진행 중
+# Gacha Forge Customizer — 통합 연동 시험판 (0.3.0-dev)
 
-> 이 폴더는 출시된 패치가 아닙니다. 현 단계에서 서버 운영 환경에 설치하면 안 됩니다.
+> **시험 코드이며 운영 서버 설치 금지.** 현재 배포물은 사용자 제공 `server.mjs`에 대한 오프라인 패치와 개인 확장 시안입니다. 실제 서비스 실행·인증·뽑기·배너 회귀 테스트가 완료되지 않았습니다.
 
-2026-10-20 기준으로 업로드된 `server.mjs` 소스를 대상으로 오프라인 통합 패치를 구성했습니다. 개인 확장에서는 서버 설정을 GET으로 조회하고 관리자 인증키를 넣어 POST로 저장하도록 설계했습니다.
+## 파일
 
-## 로컬 시험 결과
+- `manifest.json` / `extension.js`: 개인 확장 미리보기
+- `patch.py`: 원본 `server.mjs`를 읽고 **새 출력 파일만 작성**하는 일치 검증형 패치
+- 설정 API: `GET /api/gacha-forge/gf-customizer/settings`, `POST /api/gacha-forge/gf-customizer/settings`
 
-- 사용자 제공 원본의 정확한 코드 위치를 확인하여 패치 파일 생성 성공
-- 생성된 `server.mjs` Node.js 문법 검사 통과
-- 개인 확장 `extension.js` Node.js 문법 검사 통과
-- 같은 패치를 두 번 적용할 때 실패하도록 처리
-- 원본 서버 파일 불변 확인
+## curl 다운로드 (다운로드 및 문법 검사만)
 
-**실행 환경 검증, 실제 뽑기 판정, 배너 재생성, 모바일 동기화 테스트는 진행하지 않았습니다.**
+다음은 서버 원본을 덮어쓰거나 Docker를 재시작하지 않습니다.
 
-## 현재 범위
+```bash
+mkdir -p ~/gf-customizer-preview
+cd ~/gf-customizer-preview
 
-- 배너 신규 생성 주기
-- 캐릭터/무기 5성 천장 구분
-- 픽업 확정 옵션
-- 최대 패싯 중복 Glimmer 지급 설정
-- 설정 저장 API (24자 이상 서버 비밀키 필수)
+BASE="https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/main/experimental/live-integration"
+curl -fL --retry 3 "$BASE/patch.py" -o patch.py
+curl -fL --retry 3 "$BASE/manifest.json" -o manifest.json
+curl -fL --retry 3 "$BASE/extension.js" -o extension.js
 
-기존 진행 중인 배너의 종료 시점을 소급 변경하지 않습니다. 월드별 설정은 아직 구현하지 않았습니다.
+python3 -m py_compile patch.py
+node --check extension.js
+python3 -m json.tool manifest.json >/dev/null
+```
 
-## 다음 단계
+### 서버 원본 복사본으로 오프라인 검사
 
-1. 독립 테스트 서버에서 기존 가챠포지 API와 개인 확장 실행 여부 검증
-2. 읽기/쓰기 인증 및 설정 파일 마운트 보장
-3. 천장 상태·배너 교체 회귀 테스트
-4. Glimmer 정가 상점: 월드 소속 검사, 잔액 확인, 원자적 지급/차감, 중복 요청 방지
-5. GitHub에 검증된 설치 패키지와 curl 및 Docker 설치/제거 안내 배포
+`/path/to/server.mjs` 부분에 **사용 중인 Gacha Forge의 원본 소스 위치**를 넣어야 합니다. 기존 파일과 정확히 일치하지 않으면 패치는 적용을 중단합니다.
 
-현재 저장소의 `manifest.json` + `extension.js`는 종전 로컬 설정 패널 버전입니다. 위 시험판으로 자동 업데이트되지 않습니다.
+```bash
+python3 patch.py /path/to/server.mjs /tmp/gf-customizer-test-server.mjs
+node --check /tmp/gf-customizer-test-server.mjs
+```
+
+**주의:** `/tmp/gf-customizer-test-server.mjs`은 운영 파일이 아닌 검사 결과입니다. `server.mjs` 교체, 컨테이너 볼륨 마운트, 환경변수 설정 및 서버 재시작은 하지 마세요.
+
+## 이번 시험판 기능
+
+- 새 배너 생성 시 기간(1~30일) 반영 시도
+- 캐릭터/무기 5성 천장 별도 지정 시도
+- 픽업 5성 확정 옵션
+- 풀돌 중복 Glimmer 설정 (별도 신규 재화 없음)
+- 서버 공통 설정 파일 영구 저장 API와 관리자 인증키 검증
+
+## 아직 필요한 검증과 구현
+
+- 이미 생성된 배너의 종료 시점은 변경하지 않음
+- 정해진 주기에 다음 픽업이 자동 생성되는지 미검증
+- 기존 서버 기본값·천장 계산·확률·픽업 실패 상태 보존 회귀 테스트 미완료
+- API 라우팅, 파일 쓰기 권한, 인증 방식, 동시성 안전성 실환경 검증 미완료
+- 월드별 설정, 서버 패치 자동 적용/제거, 클라이언트 실제 설치 검증 미완료
+- 기존 Glimmer를 사용한 4성·5성 정가 상점 **미구현**
+
+설정 변경은 서버 파일 자체를 실시간으로 덮어쓰는 방식이 아니라, 향후 검증된 서버 API를 통해 서버 설정 파일에 저장하는 방식으로 설계했습니다.
+
+[프로젝트 메인](https://github.com/tlsiddl/gacha-forge-customizer)
