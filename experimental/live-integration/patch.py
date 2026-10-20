@@ -23,7 +23,7 @@ function gfSave(next){const validated=gfNormalize(next);const tmp=GF_FILE+"."+pr
 '''
 rep('var rb=[',boot+'var rb=[')
 rep('var Wu=336*60*60*1e3;','var Wu=336*60*60*1e3;') if False else None
-rep('days:Math.round(Wu/(1440*60*1e3))','days:GF_SETTINGS.bannerDays')
+rep('days:Math.round(Wu/(1440*60*1e3))','days:r&&Number(r.endsAt)>Number(r.startedAt)?Math.max(1,Math.round((Number(r.endsAt)-Number(r.startedAt))/(1440*60*1e3))):GF_SETTINGS.bannerDays')
 rep('endsAt:n+Wu','endsAt:n+GF_SETTINGS.bannerDays*24*60*60*1e3')
 rep('Kt=MA(U,Q,ne)','Kt=gfPity(U,Q,ne,m)')
 rep('RA(U,x.fiveId,ee,Y)','gfPick(U,x.fiveId,ee,Y)')
