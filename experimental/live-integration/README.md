@@ -311,3 +311,22 @@ bash prepare_isolated_snapshot.sh
 ```
 
 이 백업은 **패키지와 스크립트 및 시험 결과물에 한정**됩니다. Gacha Forge 게임 세이브, Marinara 전체 데이터베이스, Docker 볼륨 전부의 백업이 아닙니다. `/app/data` 볼륨과 서비스 전반의 완전한 롤백 계획을 준비하기 전에는 배포·재시작·운영 구매 활성화를 하면 안 됩니다. 백업 원본은 수동 복구용으로 따로 보관하며, 복구 작업은 수행하지 않습니다.
+
+
+## ESM 런타임 훅 시험판 (운영 연결 전, 2026-10-20)
+
+`patch.py --edits-output`으로 원본→패치본의 **정확 일치 문자열 수정 목록**을 JSON으로 생성합니다. `gf-customizer-runtime.cjs`는 Node 22+ `registerHooks`에서 가챠포지 1.8.12 실행 스냅샷을 대상으로, `nextLoad()`의 기존 로더 변환 결과에 이 수정 목록을 적용합니다. 모든 원본 시그니처가 정확히 1회 일치하지 않으면 **어떠한 수정도 적용하지 않고** 기존 결과를 반환합니다. 원본·스냅샷·매니페스트는 직접 수정하지 않습니다. 현재 `GF_CUSTOMIZER_ENABLE_EXCHANGE`를 운영에서 켜지 마세요.
+
+다음 명령은 오프라인 파일만 생성하고, 독립된 Node 프로세스로 **변환 일치/상위 수정 보존/불일치 시 안전 중단**을 검사합니다. 운영 Docker 환경변수/Compose/파일은 변경하지 않습니다.
+
+```bash
+cd /home/ubuntu/marinara-migration/Marinara-Engine/gf-customizer-integration
+BASE=https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer
+curl -fL "$BASE/d9ad7dbce6903601a84a4dd5137c2c66184b2f27/experimental/live-integration/patch.py" -o patch.py
+curl -fL "$BASE/13e336ad3519119cfa05248ccf9949535f5a4880/experimental/live-integration/gf-customizer-runtime.cjs" -o gf-customizer-runtime.cjs
+curl -fL "$BASE/ee22781bade3f2170bc1e6135c26014c14c09903/experimental/live-integration/test_runtime_loader.py" -o test_runtime_loader.py
+python3 patch.py server-original.mjs server-test.mjs --edits-output gf-customizer-edits.json
+python3 test_runtime_loader.py
+```
+
+**미검증:** 실제 한글/CG 로더의 합성 결과, 마리나라 호스트 실행과 서버 API 등록, 클라이언트 확장 화면. 위 모의 입력의 상위 수정 보존 시험은 실제 로더 체인과 동등하다고 보장하지 않습니다. 통과 전에는 운영 연결을 진행하지 않습니다.
