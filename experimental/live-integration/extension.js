@@ -25,7 +25,7 @@
      if(promise&&typeof promise.then==='function')promise.then(response=>{
        if(!response?.ok)return;
        if(requested)acceptRunId(requested);
-       if(!/\\/(state|runs)(\\/|$)/.test(u.pathname))return;
+       if(!/\/(state|runs)(\/|$)/.test(u.pathname))return;
        if(Number(response.headers?.get?.('content-length')||0)>1024*1024)return;
        response.clone().json().then(readRunResponse).catch(()=>{});
      }).catch(()=>{});
