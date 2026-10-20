@@ -126,3 +126,21 @@ python3 test_banner_rotation.py server-original.mjs server-test.mjs
 ```
 
 모든 명령은 운영 가챠포지 파일이나 데이터베이스를 수정하지 않습니다.
+
+
+## 배너 문서 저장 경로 보완
+
+실제 `hl()` 함수의 달력 배너 채택 분기에서 **기존 달력 배너 문서의 옛 `startedAt/endsAt`가 신규 `fN` 문서에 복사되는 문제**를 확인했습니다. 패치 생성기가 새 회차의 시각을 두 배너에 명시하도록 수정되었습니다.
+
+`test_banner_persistence.py`는 원본의 `hl()` 구현을 그대로 추출하고 문서 조회·작성·갱신 함수에 **모의 저장소**를 연결합니다. 달력 배너 채택과 만료된 배너의 차기 회차 저장 요청을 확인하지만 **실제 Marinara 데이터베이스 저장과 백그라운드 실행은 검증하지 않습니다.**
+
+```bash
+cd ~/gf-customizer-preview
+BASE="https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/main/experimental/live-integration"
+curl -fL "$BASE/patch.py" -o patch.py
+curl -fL "$BASE/test_banner_persistence.py" -o test_banner_persistence.py
+python3 patch.py server-original.mjs server-test.mjs
+python3 test_banner_persistence.py server-test.mjs
+```
+
+**Glimmer 정가 상점:** 현재 실제 게임 저장 로직과 중복 지급 정책을 검토 중이며 아직 기능 코드가 구현되지 않았습니다. 검증 전에는 기존 재화·로스터 데이터를 수정하지 않습니다.
