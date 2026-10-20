@@ -94,7 +94,7 @@ const handlers={GET:{},POST:{}},s={get:(path,fn)=>handlers.GET[path]=fn,post:(pa
  process.env.GF_CUSTOMIZER_SECRET="";
  assert.equal((await post({body:{secret:"a".repeat(32),settings:valid}})).error,"unauthorized");
  console.log("PASS mocked settings API auth, GET, POST, invalid settings");
-})().catch(e=>{console.error(e);process.exitCode=1});
+})().catch(e=>{console.error(e);globalThis.process.exitCode=1});
 '''
     node_check(route_test)
     # Assert exact replacements for banner creation and displayed countdown.
