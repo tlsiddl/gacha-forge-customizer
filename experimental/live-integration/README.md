@@ -271,3 +271,18 @@ python3 test_storage_contract.py server-original.mjs
 ```
 
 **배포 차단:** `GF_CUSTOMIZER_ENABLE_EXCHANGE` 환경변수 게이트를 켜더라도 관리자 키는 플레이어별 게임 세션 인증이 아닙니다. 마리나라 호스트에서 검증된 사용자 ID와 세션 접근 권한 정보를 전달해 주는 공식 경로를 찾고 실제 보호 로직을 검증하기 전에는 운영 구매를 활성화하지 않습니다.
+
+
+## 2026-10-20 — 한 개 확장 UI 정리 및 오프라인 일괄 검사
+
+기존 개인 확장 `extension.js`의 한국어 안내를 존댓말로 정리하고, 실제 구매 버튼이 **계속 비활성화된 시험판**이라는 점을 표시했습니다. `manifest.json`의 설명도 실제 기능 범위에 맞게 업데이트했습니다. 이 변경은 서버 원본이나 저장 데이터를 수정하지 않습니다.
+
+`verify_preview.sh`는 원본으로 시험 패치를 새로 생성하고, JS 문법·기존 모의 회귀 테스트를 실행하며 서비스 재시작·배포를 하지 않습니다. 테스트 스크립트가 빠져 있으면 성공으로 처리하지 않고 중단합니다. **실제 작동/인증/배포 완료를 의미하지 않습니다.**
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/8a4b7f77325571f4b2878529e90509a64bdccaf0/experimental/live-integration/extension.js -o extension.js
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/7beee9ec6f301a55afa11afdf260f11cc5f86d1a/experimental/live-integration/manifest.json -o manifest.json
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/66efce7f231c367ae42eca9709ec1c0fe39da0ca/experimental/live-integration/verify_preview.sh -o verify_preview.sh
+bash verify_preview.sh
+```
