@@ -1,0 +1,14 @@
+{
+  "kind": "marinara.personal-extension",
+  "version": 1,
+  "config": {
+    "name": "Gacha Forge · 가챠 커스터마이저",
+    "version": "0.2.0-dev",
+    "description": "통합 커스터마이저 개발 버전: 현재 UI 설정 저장만 지원, 게임 판정 변경 없음",
+    "runtime": "client",
+    "capabilities": [
+      "full_page_access"
+    ],
+    "jsPath": "extension.js"
+  }
+}
