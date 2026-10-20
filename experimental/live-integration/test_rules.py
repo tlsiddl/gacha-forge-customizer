@@ -9,7 +9,7 @@ if not shutil.which("docker"):
     raise SystemExit("ERROR: Docker CLI not found")
 def node_check(code, check_only=False):
     cmd=["docker","exec","-i",args.container,"node"]
-    if check_only: cmd+=["--check","-"]
+    if check_only: cmd+=["--input-type=module","--check","-"]
     result=subprocess.run(cmd,input=code,text=True,capture_output=True)
     if result.stdout: print(result.stdout,end="")
     if result.stderr: print(result.stderr,end="",file=__import__("sys").stderr)
