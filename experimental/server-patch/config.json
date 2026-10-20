@@ -1,0 +1,15 @@
+{
+  "bannerDays": 3,
+  "characterPity": 70,
+  "weaponPity": 60,
+  "characterFeaturedGuarantee": true,
+  "weaponFeaturedGuarantee": true,
+  "fullFacetGlimmer": {
+    "4": 8,
+    "5": 40
+  },
+  "shopPrices": {
+    "4": 40,
+    "5": 200
+  }
+}
