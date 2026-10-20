@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Strict-match offline patch for the exact supplied Gacha Forge server.mjs. Never edits input."""
-import argparse, pathlib, hashlib
-p=argparse.ArgumentParser();p.add_argument('input');p.add_argument('output');a=p.parse_args()
-src=pathlib.Path(a.input).read_text();before=src
+import argparse, pathlib, hashlib, json
+p=argparse.ArgumentParser();p.add_argument('input');p.add_argument('output');p.add_argument('--edits-output');a=p.parse_args()
+src=pathlib.Path(a.input).read_text();before=src;edits=[]
 
 def rep(old,new):
  global src
  n=src.count(old)
  if n!=1: raise SystemExit(f'ABORT: expected one match ({n}): {old[:90]}')
  src=src.replace(old,new,1)
+ edits.append({'old':old,'new':new})
 
 # Persist data under private server volume and block unauthenticated writes.
 boot='''import {readFileSync as gfReadFile,writeFileSync as gfWriteFile,renameSync as gfRenameFile,mkdirSync as gfMkdir} from "node:fs";
@@ -44,4 +45,6 @@ rep('s.post("/shop/buy",async p=>',catalog+'s.post("/shop/buy",async p=>')
 
 rep('s.get("/ping",async()=>',route+'s.get("/ping",async()=>')
 pathlib.Path(a.output).write_text(src)
+if a.edits_output:
+ pathlib.Path(a.edits_output).write_text(json.dumps({'originalSha256':hashlib.sha256(before.encode()).hexdigest(),'patchedSha256':hashlib.sha256(src.encode()).hexdigest(),'edits':edits},ensure_ascii=False))
 print('Patched output only:',a.output,'size=',len(src),'input SHA256=',hashlib.sha256(before.encode()).hexdigest())
