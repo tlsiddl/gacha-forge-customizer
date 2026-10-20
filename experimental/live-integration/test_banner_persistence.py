@@ -4,6 +4,8 @@ import argparse, shutil, subprocess, sys
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument("patched");p.add_argument("--container",default="marinara-engine-marinara-1");a=p.parse_args()
 source=Path(a.patched).read_text()
+if "data:{...re.data,startedAt:ye.startedAt,endsAt:ye.endsAt}" not in source or "data:{...oe.data,startedAt:ye.startedAt,endsAt:ye.endsAt}" not in source:
+    sys.exit("ERROR: stale patch detected. Download patch.py from pinned commit 32123b36a2cb3215e704f446cf09e5339afe83ee, regenerate server-test.mjs, and retry.")
 start=source.index("function ht(");end=source.index("function Fc(",start)
 core=source[start:end]
 begin=source.index("async function hl(");stop=source.index("async function Sh(",begin)
