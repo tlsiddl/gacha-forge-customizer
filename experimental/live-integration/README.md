@@ -330,3 +330,16 @@ python3 test_runtime_loader.py
 ```
 
 **미검증:** 실제 한글/CG 로더의 합성 결과, 마리나라 호스트 실행과 서버 API 등록, 클라이언트 확장 화면. 위 모의 입력의 상위 수정 보존 시험은 실제 로더 체인과 동등하다고 보장하지 않습니다. 통과 전에는 운영 연결을 진행하지 않습니다.
+
+
+## 기존 한글·CG 훅과 실제 소스 합성 확인 (격리 프로세스)
+
+`test_hook_chain.py`는 기존 서버 컨테이너 안에서 **새 Node 프로세스**를 실행합니다. 이미 등록된 `NODE_OPTIONS` 로더를 사용하여 1.8.12 스냅샷의 코드를 **로딩만** 하고, 최종 가로채기 훅에서 수정된 서버 모듈을 **실행하지 않고 무해한 ES 모듈로 교체**합니다. 실제 한글·CG 소스 변환 결과에 커스터마이저 수정 목록이 적용되는지 확인합니다. 원본 파일, 운영 환경변수, 데이터 볼륨, Compose 설정, 게임 상태는 변경하지 않습니다.
+
+```bash
+cd /home/ubuntu/marinara-migration/Marinara-Engine/gf-customizer-integration
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/fa5c43d42040c25464674757c0e86e97c4ffe591/experimental/live-integration/test_hook_chain.py -o test_hook_chain.py
+python3 test_hook_chain.py
+```
+
+**주의:** 위 합성 검사는 실행 스냅샷 경로 `7d3883c2-c1f5-4f22-a362-2b1d04e868ae`를 사용하며, 해당 스냅샷이 사라지면 실패합니다. 이는 운영 로더 설치 및 실제 API 통신 확인이 아닙니다. 실험 준비용 `test_hook_chain.sh`는 실제 실행 검사를 구현하지 않았으니 사용하지 마세요.
