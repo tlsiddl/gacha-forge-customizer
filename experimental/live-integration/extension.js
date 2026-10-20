@@ -52,10 +52,10 @@
  const shopStatus=document.createElement('p');shopStatus.setAttribute('role','status');shopStatus.textContent='먼저 Run ID를 입력해 목록을 조회해 주세요. 구매는 서버에서 별도로 활성화해야 합니다.';
  const results=document.createElement('div');results.style.cssText='max-height:240px;overflow:auto';results.setAttribute('aria-live','polite');
  browse.append(runInput,secretInput,browseButton,shopStatus,results);shop.append(browse);shopSection.append(shop);
- let pendingPurchase=null,shopBusy=false;
+ let pendingPurchase=null,shopBusy=false,lastCatalogRun='';
  async function browseCatalog(){const rid=runInput.value.trim();if(!rid){shopStatus.textContent='Run ID를 입력해 주세요.';return;}if(shopBusy)return;shopBusy=true;browseButton.disabled=true;shopStatus.textContent='목록을 조회하고 있습니다…';results.replaceChildren();
   try{const response=await fetch('/api/gacha-forge/gf-customizer/exchange/catalog',{method:'POST',credentials:'same-origin',headers:privilegedHeaders(true),body:JSON.stringify({runId:rid})});const payload=await response.json();if(!response.ok||!payload.ok)throw Error(payload.error||'조회 실패');
-   const enabled=payload.exchangeEnabled===true;shopStatus.textContent='Glimmer '+Number(payload.glimmer||0).toLocaleString('ko-KR')+' · '+payload.characters.length+'명'+(enabled?' · 구매 가능':' · 구매 비활성화');
+   lastCatalogRun=rid;const enabled=payload.exchangeEnabled===true;shopStatus.textContent='Glimmer '+Number(payload.glimmer||0).toLocaleString('ko-KR')+' · '+payload.characters.length+'명'+(enabled?' · 구매 가능':' · 구매 비활성화');
    for(const ch of payload.characters){const line=document.createElement('div');line.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid #576986;padding:9px 0';const desc=document.createElement('div');const name=document.createElement('strong');name.textContent=(ch.rarity||'?')+'성 '+(ch.name||ch.id);const info=document.createElement('div');info.textContent=(ch.owned?'보유 · Facet '+ch.facet+'/'+ch.maxFacet:'미보유')+' · 교환 '+ch.exchangeCount+'회 · '+ch.price+' Glimmer';info.style.cssText='font-size:12px;color:#c6d4ea';desc.append(name,info);
     const action=document.createElement('button');action.type='button';action.disabled=!enabled||ch.maxed||Number(payload.glimmer)<ch.price;action.textContent=ch.maxed?'최대 돌파':!enabled?'구매 비활성화':Number(payload.glimmer)<ch.price?'잔액 부족':'교환';action.style.cssText=baseStyle+'cursor:pointer;flex-shrink:0';line.append(desc,action);results.append(line);
     action.onclick=async()=>{if(shopBusy||action.disabled)return;const secret=secretInput.value;if(secret.length<24){shopStatus.textContent='구매 전용 비밀키를 입력해 주세요 (최소 24자).';return;}if(!window.confirm(ch.name+' 캐릭터를 '+ch.price+' Glimmer로 교환할까요?'))return;
@@ -70,10 +70,10 @@
  }
  function applyObservedRun(id){
    if(!runInput||!id)return;
-   if(runInput.value.trim()!==id){runInput.value=id;pendingPurchase=null;results.replaceChildren();}
+   if(runInput.value.trim()!==id){runInput.value=id;pendingPurchase=null;lastCatalogRun='';results.replaceChildren();}
    runInput.hidden=true;
    // An observed run is known from successful game traffic; never guess one.
-   if(activePane===shopSection.closest('[data-screen]')||nativeView==='shop')browseCatalog();
+   if(nativeView==='shop'&&!shopBusy&&lastCatalogRun!==id)browseCatalog();
  }
  observedRunListener=applyObservedRun;
  if(observedRunId)applyObservedRun(observedRunId);
