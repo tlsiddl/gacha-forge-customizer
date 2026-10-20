@@ -12,7 +12,7 @@ python3 -m py_compile patch.py
 python3 -m json.tool manifest.json >/dev/null
 docker exec -i "$CONTAINER" node --check < extension.js
 python3 patch.py server-original.mjs server-test.mjs
-docker exec -i "$CONTAINER" node --check < server-test.mjs
+docker exec -i "$CONTAINER" node --input-type=module --check < server-test.mjs
 for t in test_rules.py test_banner_rotation.py test_banner_persistence.py test_exchange.py test_exchange_concurrency.py test_catalog.py test_storage_contract.py; do
   if [ ! -f "$t" ]; then echo "MISSING TEST: $t"; exit 3; fi
   if [ "$t" = test_storage_contract.py ]; then
