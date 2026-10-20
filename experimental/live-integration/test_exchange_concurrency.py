@@ -12,11 +12,11 @@ end=src.index('s.post("/shop/buy",async p=>',start)
 handler=src[start:end].rstrip(",")
 script=r'''const assert=require("node:assert/strict");
 const handlers={},s={post:(path,fn)=>handlers[path]=fn};
-const process={env:{GF_CUSTOMIZER_SECRET:"local-test-secret-123456789012345"}};
+const process={env:{GF_CUSTOMIZER_SECRET:"local-test-secret-123456789012345",GF_CUSTOMIZER_ENABLE_EXCHANGE:"1"}};
 const l=x=>String(x||"").trim(),Xe={glimmer:0},At=x=>x,at=x=>x,Sn=6,aa=(n,d)=>Number(n)||d;
 function vf(e){const t=Math.max(0,Math.min(Sn,Math.floor(aa(e,0))));return{facet:Math.min(Sn,t+1),gained:t<Sn,max:Sn}}
 const be=async()=>({data:{}}),Ae=(_,id)=>id==="valid";
-const Gn=async id=>({c4:{kind:"character",rarity:4}}[id]||null);
+const Gn=async id=>({"valid:unit:c4":{kind:"character",rarity:4}}[id]||null);
 let state={wallet:{glimmer:500},roster:{}},revision=0;
 let waiting=[],releases=[];
 const pe=async()=>{const snapshot={doc:{revision},data:structuredClone(state)};
@@ -29,7 +29,7 @@ const Pe=async(_,doc,next)=>{
 };
 ''' +handler+r''';
 (async()=>{
-const buy=(rid)=>handlers["/gf-customizer/exchange"]({body:{runId:"valid",characterId:"c4",requestId:rid,secret:process.env.GF_CUSTOMIZER_SECRET}});
+const buy=(rid)=>handlers["/gf-customizer/exchange"]({body:{runId:"valid",characterId:"valid:unit:c4",requestId:rid,secret:process.env.GF_CUSTOMIZER_SECRET}});
 const p1=buy("test_request_00000000001");
 const p2=buy("test_request_00000000002");
 await new Promise(resolve=>setImmediate(resolve));
@@ -39,7 +39,7 @@ const [a,b]=await Promise.all([p1,p2]);
 assert.equal(Number(a.ok)+Number(b.ok),1);
 assert.equal([a.error,b.error].filter(x=>x==="write-conflict").length,1);
 assert.equal(state.wallet.glimmer,400);
-assert.equal(state.gfCustomizer.exchangeCounts.c4,1);
+assert.equal(state.gfCustomizer.exchangeCounts["valid:unit:c4"],1);
 assert.equal(revision,1);
 const success=a.ok?a:b;
 const succeededRequest=a.ok?"test_request_00000000001":"test_request_00000000002";
