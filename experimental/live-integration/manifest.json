@@ -4,7 +4,7 @@
   "config": {
     "name": "Gacha Forge · Customizer",
     "version": "0.4.2-dev",
-    "description": "설정·상점 내부 통합 오류 수정 및 Shadow DOM 감지 보정; 구매 비활성화",
+    "description": "가챠 천장·배너 설정 및 관리자용 Glimmer 교환 UI. 서버 구매는 별도 인증과 활성화가 필요합니다.",
     "runtime": "client",
     "capabilities": [
       "full_page_access"
