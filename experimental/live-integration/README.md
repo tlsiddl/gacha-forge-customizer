@@ -152,7 +152,7 @@ python3 test_banner_persistence.py server-test.mjs
 * 기존 **Glimmer**를 사용하며 새 화폐를 만들지 않습니다.
 * **임시 가격: 4성 120, 5성 600 Glimmer.** 사용자 확정 가격이나 게임 원작 가격이 아닙니다.
 * 존재하지 않는 캐릭터·무기·3성 대상은 차단합니다. 신규 캐릭터는 `roster[id]={level:1,bondFights:0}`으로 기록합니다.
-* 이미 보유한 캐릭터는 원본 `vf()`로 Facet을 올립니다. 최대 Facet이면 Facet을 더 올리지 않지만 교환 비용은 차감됩니다. 최종 정책 논의가 필요합니다.
+* 이미 보유한 캐릭터는 원본 `vf()`로 Facet을 올립니다. **최대 Facet이면 교환을 거부하고 Glimmer를 차감하지 않습니다.**
 * 잔액 차감과 캐릭터 지급은 같은 세션 문서의 사본에 적용한 뒤 **한 번의 `Pe()` revision-checked 저장**으로 요청합니다. 저장 실패 시 원본 메모리 상태를 유지합니다.
 * 실행 중 동시 구매, 여러 사용자 인증, 리플레이 방지, 실제 클라이언트 연동, 서버 영속 저장 결과는 **검증되지 않았습니다**.
 
@@ -166,3 +166,18 @@ python3 test_exchange.py server-test.mjs
 ```
 
 테스트는 실제 계정의 재화나 캐릭터를 지급·차감하지 않습니다. **운영 서버에 아직 설치하지 마세요.**
+
+
+## 캐릭터별 누적 가격 규칙
+
+각 세션의 `gfCustomizer.exchangeCounts[characterId]`에 **상점 교환에 성공한 횟수**만 기록합니다. 4성 최초 100, 5성 최초 300 Glimmer, 이후 각 캐릭터별 성공 횟수에 따라 +20씩 인상됩니다. 다른 캐릭터 교환이나 일반 가챠 획득으로 이 값이 오르지 않습니다.
+
+최대 돌파(`facet >= Sn`) 캐릭터는 비용 차감 전에 `max-facet` 오류로 교환을 거부합니다. 비용, 캐릭터 지급, 교환 횟수는 동일한 세션 문서의 변경본을 단 한 번 저장하도록 요청합니다. **서버 측 구매 중복 요청 방어, 실제 동시 구매 및 소유자 권한 검사는 아직 완료되지 않아 운영 설치 금지입니다.**
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/4bbb83f377ce567f65b49d2214ba04915aae730c/experimental/live-integration/patch.py -o patch.py
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/283a4d7b5a1008bdbea5c3c52bd776ea8239e83a/experimental/live-integration/test_exchange.py -o test_exchange.py
+python3 patch.py server-original.mjs server-test.mjs
+python3 test_exchange.py server-test.mjs
+```
