@@ -54,9 +54,9 @@ const Pe=async(_,doc,next)=>{saveCount++;if(!saveSuccess)return false;state=next
  saveSuccess=true;
  let five=await buy("valid","c5");
  assert.equal(five.isNew,true);assert.equal(five.price,300);
- assert.equal(state.wallet.glimmer,450);assert.equal(state.gfCustomizer.exchangeCounts.c5,1);
- assert.equal(state.gfCustomizer.exchangeCounts.c4,2);
- state.roster.c4.facet=Sn;
+ assert.equal(state.wallet.glimmer,450);assert.equal(state.gfCustomizer.exchangeCounts["valid:unit:c5"],1);
+ assert.equal(state.gfCustomizer.exchangeCounts["valid:unit:c4"],2);
+ state.roster["valid:unit:c4"].facet=Sn;
  const maxSnapshot=structuredClone(state);
  assert.equal((await buy("valid","c4")).error,"max-facet");
  assert.deepEqual(state,maxSnapshot);
@@ -65,7 +65,7 @@ const Pe=async(_,doc,next)=>{saveCount++;if(!saveSuccess)return false;state=next
  assert.equal(last.price,320);assert.equal(last.facet.facet,Sn);
  assert.equal(state.wallet.glimmer,130);
  assert.equal((await buy("valid","c5")).error,"max-facet");
- assert.equal(state.gfCustomizer.exchangeCounts.c5,2);
+ assert.equal(state.gfCustomizer.exchangeCounts["valid:unit:c5"],2);
  console.log("PASS exchange: rarity guard, per-character +20 prices, max facet block, funds and rollback");
 })().catch(e=>{console.error(e);globalThis.process.exitCode=1});
 ''';
