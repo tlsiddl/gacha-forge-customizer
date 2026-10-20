@@ -236,3 +236,25 @@ python3 test_exchange_concurrency.py server-test.mjs
 ```
 
 **주의:** 모의 저장소의 revision-CAS 작동을 검사하는 테스트이지 운영 Marinara `Pe()`의 원자성을 입증하는 시험이 아닙니다. 또한 개발용 관리자 비밀키는 사용자별 세션 소유권 검증이 아닙니다. 운영 서버 패치 및 구매 버튼 활성화는 계속 금지합니다.
+
+
+## 실제 저장소·세션 경계 조사 (2026-10-20)
+
+사용자가 제공한 Gacha Forge 1.8.12 `server.mjs`에서 다음을 확인했습니다.
+
+- `Pe(runId, doc, data)`는 기존 문서 업데이트에 `a.update({ expectedRevision: doc.revision, ... })`를 사용합니다. 충돌 감지를 **요청**하지만, `a.update` 내부의 원자성을 확인한 것은 아닙니다.
+- `Ae(registry, runId)`는 `registry.runs`에서 runId를 찾을 뿐 호출자 소유권을 판정하지 않습니다.
+- `Gn(characterId)`는 제공된 문서 ID를 그대로 조회합니다. 캐릭터 구매에는 선택 세션의 `runId:unit:` 접두어 검사도 필요합니다.
+
+**안전 조치:** 구매 API는 기본값에서 항상 `exchange-disabled`를 반환합니다. 서버 환경변수 `GF_CUSTOMIZER_ENABLE_EXCHANGE=1`을 설정해야 시험 구매 핸들러가 진행되지만 **소유권 검증이 없어 운영 환경에서는 해당 플래그를 절대 설정하면 안 됩니다.** 구매 요청 ID는 재시도 중복 차감을 막기 위해 사용되지만 실제 동시성 보장 및 사용자별 접근 제한은 별도 과제입니다. UI의 실제 구매 버튼은 비활성화 상태입니다.
+
+회귀 테스트는 **개발용 모의 컨테이너**에서만 시험 플래그를 켜며 실제 마리나라 서비스의 설정을 변경하지 않습니다.
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/42f57d100eb79de1693b801e788312614aa42858/experimental/live-integration/patch.py -o patch.py
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/66a993d2bb060098a45884c36202daad5704a1df/experimental/live-integration/test_exchange.py -o test_exchange.py
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/44f24ab67bd2afdf84e26f4fa92a14b984c4865e/experimental/live-integration/test_exchange_concurrency.py -o test_exchange_concurrency.py
+python3 patch.py server-original.mjs server-test.mjs
+python3 test_exchange.py server-test.mjs
+python3 test_exchange_concurrency.py server-test.mjs
+```
