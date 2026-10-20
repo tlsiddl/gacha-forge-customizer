@@ -286,3 +286,15 @@ curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/7beee9
 curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/66efce7f231c367ae42eca9709ec1c0fe39da0ca/experimental/live-integration/verify_preview.sh -o verify_preview.sh
 bash verify_preview.sh
 ```
+
+## 운영 연동 전 원본 대조 (읽기 전용, 2026-10-20)
+
+`predeploy_audit.sh`는 현재 실행 중인 컨테이너의 Gacha Forge 1.8.12 원본 패키지 SHA256, 기존 로컬 원본 복사본 SHA256, Docker 마운트 목적지 메타데이터를 확인합니다. 비밀 환경변수 값과 원본 파일 내용은 출력하지 않습니다. 불일치 시 중단합니다.
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/4c3c8d703dafeeee1198dedf9e9376c50cd81bf2/experimental/live-integration/predeploy_audit.sh -o predeploy_audit.sh
+bash predeploy_audit.sh
+```
+
+백업·복구 방안, 실제 호스트 인증과 패키지 서명 검증 경로, 격리된 시험 적용 절차가 확정되기 전에는 운영 파일 교체나 환경변수 변경을 하지 마세요.
