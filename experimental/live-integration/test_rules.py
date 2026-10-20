@@ -98,7 +98,7 @@ const handlers={GET:{},POST:{}},s={get:(path,fn)=>handlers.GET[path]=fn,post:(pa
 '''
     node_check(route_test)
     # Assert exact replacements for banner creation and displayed countdown.
-    assert 'days:GF_SETTINGS.bannerDays' in patched
+    assert 'days:r&&Number(r.endsAt)>Number(r.startedAt)?' in patched
     assert 'endsAt:n+GF_SETTINGS.bannerDays*24*60*60*1e3' in patched
     assert 'days:Math.round(Wu/(1440*60*1e3))' not in patched
     assert 'endsAt:n+Wu' not in patched
