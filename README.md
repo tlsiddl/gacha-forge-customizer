@@ -143,3 +143,16 @@ Activated and verified capability package gacha-forge@1.8.12
 ## 변경 기록
 
 [CHANGELOG.md](CHANGELOG.md)
+
+
+## Gacha Forge 1.8.13 / Marinara Engine 2.5.1 지원 파일
+
+기존 1.8.12 배포 파일을 덮어쓰지 않도록 1.8.13용 서버 패치를 [`versions/gf1813/`](versions/gf1813/)에 별도 추가했습니다. **런타임과 JSON을 반드시 같은 디렉터리의 한 쌍으로 사용**하세요. 1.8.12 기존 설치·확장 UI는 변경하지 않았습니다. 1.8.13용 JSON은 기존 14개 수정 규칙을 기반으로 신규 원본 SHA(`defce243...`)와 수정본 SHA(`a49d9883...`)를 적용한 후보이며, 서버에서 검증한 변경 규칙과 대조 후 실사용 확인이 필요합니다.
+
+```bash
+cd /root/Marinara-Engine
+curl -fL --retry 3 https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/main/versions/gf1813/gf-customizer-runtime.cjs -o gf-customizer-1813-runtime.cjs
+curl -fL --retry 3 https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/main/versions/gf1813/gf-customizer-edits.json -o gf-customizer-1813-edits.json
+```
+
+이 명령은 다운로드만 수행합니다. `docker-compose.gf-customizer.yml`의 마운트 원본을 신규 파일 두 개로 바꾸되 컨테이너 내 대상(`/app/gf-customizer-runtime.cjs`, `/app/gf-customizer-edits.json`)과 `GF_CUSTOMIZER_EDITS_PATH`는 유지하세요. 기존 Compose 파일은 먼저 백업하고 모든 `NODE_OPTIONS` 로더를 보존해야 합니다. 성공 로그는 `[gf-customizer] applied 14 edits in memory, preserving upstream hook output`입니다. 실제 적용 전에는 `signature mismatch`나 `fail closed`가 없는지 확인하세요.
