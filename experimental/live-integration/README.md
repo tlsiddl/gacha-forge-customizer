@@ -298,3 +298,16 @@ bash predeploy_audit.sh
 ```
 
 백업·복구 방안, 실제 호스트 인증과 패키지 서명 검증 경로, 격리된 시험 적용 절차가 확정되기 전에는 운영 파일 교체나 환경변수 변경을 하지 마세요.
+
+
+## 운영 파일 보존 스냅샷 (2026-10-20)
+
+`prepare_isolated_snapshot.sh`는 우선 `predeploy_audit.sh`로 운영 `server.mjs` 해시 일치를 확인하고, `docker cp`를 통해 Gacha Forge 1.8.12 패키지 전체와 컨테이너에 보이는 기존 preload 스크립트를 **호스트의 별도 폴더로 복사**합니다. 커스터마이저 시험 패치와 확장 코드도 함께 보존하고 SHA256 목록을 만듭니다. 서버 재시작, 운영 파일 교체, 설정 변경은 하지 않습니다.
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/b096120124324eb820aa96de6d66d46a04bac0d9/experimental/live-integration/prepare_isolated_snapshot.sh -o prepare_isolated_snapshot.sh
+bash prepare_isolated_snapshot.sh
+```
+
+이 백업은 **패키지와 스크립트 및 시험 결과물에 한정**됩니다. Gacha Forge 게임 세이브, Marinara 전체 데이터베이스, Docker 볼륨 전부의 백업이 아닙니다. `/app/data` 볼륨과 서비스 전반의 완전한 롤백 계획을 준비하기 전에는 배포·재시작·운영 구매 활성화를 하면 안 됩니다. 백업 원본은 수동 복구용으로 따로 보관하며, 복구 작업은 수행하지 않습니다.
