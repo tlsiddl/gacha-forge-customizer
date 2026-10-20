@@ -3,6 +3,36 @@
  const API='/api/gacha-forge/gf-customizer/settings';
  const fields={bannerDays:['배너 기간 (일)',1,30],characterPity:['캐릭터 5성 천장',1,100],weaponPity:['무기 5성 천장',1,100],fullFacetGlimmer4:['4성 풀돌 중복 Glimmer',0,100000],fullFacetGlimmer5:['5성 풀돌 중복 Glimmer',0,100000]};
  let disposed=false,button,panel,interval,values={};let nativeView='',lastScreen='',activePane=null,hiddenNodes=[];let host=null,observer=null,scheduled=false;
+ // Follow the Quest Extension's passive run discovery: observe successful game traffic, never poll /state.
+ let observedRunId='',observedRunAt=0,observedRunListener=null;
+ const priorGameFetch=window.fetch;
+ function acceptRunId(value){const id=typeof value==='string'?value.trim():'';if(!id||id.length>128||!/^[a-zA-Z0-9:_-]+$/.test(id))return;
+   const changed=observedRunId!==id;observedRunId=id;observedRunAt=Date.now();if(changed&&typeof observedRunListener==='function')observedRunListener(id);
+ }
+ function readRunResponse(payload){if(!payload||typeof payload!=='object')return;
+   const id=payload.activeRun?.runId||payload.activeRunId||payload.run?.runId;
+   if(id)acceptRunId(id);
+ }
+ const observedGameFetch=function(input,options){
+   const promise=priorGameFetch.apply(this,arguments);
+   try{const u=new URL(typeof input==='string'?input:input?.url,location.href);
+     if(u.origin!==location.origin||!u.pathname.startsWith('/api/gacha-forge/'))return promise;
+     if(u.pathname.includes('/gf-customizer/'))return promise;
+     let requested='';
+     const body=options?.body;
+     if(typeof body==='string'){try{requested=JSON.parse(body)?.runId||'';}catch{}}
+     // Requests carrying a run ID may still fail: only accept it when the game request succeeds.
+     if(promise&&typeof promise.then==='function')promise.then(response=>{
+       if(!response?.ok)return;
+       if(requested)acceptRunId(requested);
+       if(!/\\/(state|runs)(\\/|$)/.test(u.pathname))return;
+       if(Number(response.headers?.get?.('content-length')||0)>1024*1024)return;
+       response.clone().json().then(readRunResponse).catch(()=>{});
+     }).catch(()=>{});
+   }catch{}
+   return promise;
+ };
+ window.fetch=observedGameFetch;
  const baseStyle='box-sizing:border-box;font-family:system-ui,sans-serif!important;font-size:13px!important;line-height:1.45!important;letter-spacing:normal!important;color:#f2f4fa;background:#162238;border:1px solid #576986;border-radius:9px;padding:8px;';
  const isGacha=()=>{let url=location.pathname+location.hash;if(url.includes('gacha-forge'))return true;return [...document.querySelectorAll('[aria-selected="true"],[aria-current="page"]')].some(x=>/gacha\s*forge|가챠\s*포지/i.test(x.textContent||''));};
  function privilegedHeaders(json=false){const headers={'X-Marinara-CSRF':'1'};if(json)headers['Content-Type']='application/json';try{const secret=window.localStorage.getItem('marinara_admin_secret')?.trim();if(secret)headers['X-Admin-Secret']=secret;}catch{}return headers;}
@@ -38,7 +68,16 @@
    }
   }catch(e){shopStatus.textContent='조회 실패: '+e.message;}finally{shopBusy=false;browseButton.disabled=false;}
  }
- browseButton.onclick=()=>{pendingPurchase=null;browseCatalog();};
+ function applyObservedRun(id){
+   if(!runInput||!id)return;
+   if(runInput.value.trim()!==id){runInput.value=id;pendingPurchase=null;results.replaceChildren();}
+   runInput.hidden=true;
+   // An observed run is known from successful game traffic; never guess one.
+   if(activePane===shopSection.closest('[data-screen]')||nativeView==='shop')browseCatalog();
+ }
+ observedRunListener=applyObservedRun;
+ if(observedRunId)applyObservedRun(observedRunId);
+ browseButton.onclick=()=>{pendingPurchase=null;if(observedRunId)runInput.value=observedRunId;browseCatalog();};
 
  const status=document.createElement('p');status.setAttribute('role','status');status.textContent='서버 연결 확인 전';
  const inputs={};for(let [id,[label,min,max]] of Object.entries(fields)){const line=document.createElement('label');line.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;margin:10px 0';const text=document.createElement('span');text.textContent=label;const input=document.createElement('input');input.type='number';input.min=min;input.max=max;input.step=1;input.style.cssText=baseStyle+'width:92px;';inputs[id]=input;line.append(text,input);settingSection.append(line);}
@@ -62,7 +101,7 @@
  showPane(pane);
  panel.hidden=false;panel.style.cssText=baseStyle+'position:relative!important;inset:auto!important;width:100%!important;max-width:100%!important;max-height:100%!important;overflow-y:auto!important;box-shadow:none!important;margin:0!important;padding:12px!important;z-index:1!important;';const header=panel.querySelector('strong');if(header)header.style.fontSize='16px';}
  function tabSettingsClick(){const b=panel&&[...panel.querySelectorAll('button')].find(el=>el.textContent==='설정');if(b)b.click();const tabBar=panel&&panel.children[1];if(tabBar)tabBar.hidden=true;const close=panel&&panel.querySelector('button');if(close&&close.textContent==='닫기')close.hidden=true;}
- function tabShopClick(){const b=panel&&[...panel.querySelectorAll('button')].find(el=>el.textContent==='Glimmer 상점');if(b)b.click();const tabBar=panel&&panel.children[1];if(tabBar)tabBar.hidden=true;const close=panel&&panel.querySelector('button');if(close&&close.textContent==='닫기')close.hidden=true;}
+ function tabShopClick(){if(observedRunId&&typeof observedRunListener==='function')observedRunListener(observedRunId);const b=panel&&[...panel.querySelectorAll('button')].find(el=>el.textContent==='Glimmer 상점');if(b)b.click();const tabBar=panel&&panel.children[1];if(tabBar)tabBar.hidden=true;const close=panel&&panel.querySelector('button');if(close&&close.textContent==='닫기')close.hidden=true;}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
  const navigation=()=>scheduleMount();window.addEventListener('hashchange',navigation);window.addEventListener('popstate',navigation);
  // Infrequent fallback only when the game's root is replaced; no 700ms full DOM polling.
