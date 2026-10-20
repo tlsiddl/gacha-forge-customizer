@@ -208,3 +208,18 @@ python3 test_catalog.py server-test.mjs
 ```
 
 **경고:** 관리자 비밀키를 브라우저에 입력하는 현 설계는 운영용 인증 구조가 아닙니다. 별도의 세션 소유권 검증 및 서버 측 안전한 인증 후에만 출시해야 합니다. 이 모의 테스트가 실제 API 보호·개인정보 격리·브라우저 실행을 입증하지는 않습니다.
+
+
+## 구매 API 안전장치 1차 보강 (실험, 운영 사용 금지)
+
+`/gf-customizer/exchange`에 서버 환경변수 `GF_CUSTOMIZER_SECRET`와 요청 본문의 `secret` 일치 확인을 추가했습니다. 모든 구매 요청은 16~128자의 영숫자·`_`·`-`로 된 `requestId`가 필수입니다. 성공 교환 시 세션 저장 문서의 `gfCustomizer.exchangeReceipts[requestId]`에 가격·캐릭터·교환 횟수 영수증을 저장합니다. 같은 ID가 재전송되면 이전 영수증을 반환하고 잔액을 다시 차감하지 않습니다. 동일 ID를 다른 캐릭터에 사용하면 요청을 거부합니다.
+
+이는 **개발용 관리자 게이트와 요청별 멱등성 1차 구현**으로, 정상 사용자 세션 소유권 검증이 아닙니다. `Pe()`의 동시 요청 경쟁과 서버 저장 원자성이 실제 환경에서 충분히 보장되는지 아직 검증하지 않았습니다. 구매 버튼은 계속 비활성화합니다. 실제 운영 서버에 설치하지 마세요.
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/67e1cdf6ab2fd830f270ed29bb1b00fe79d218a7/experimental/live-integration/patch.py -o patch.py
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/f88c194fdde0739328369d12cedb27dadc405e6f/experimental/live-integration/test_exchange.py -o test_exchange.py
+python3 patch.py server-original.mjs server-test.mjs
+python3 test_exchange.py server-test.mjs
+```
