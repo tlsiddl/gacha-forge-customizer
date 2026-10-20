@@ -223,3 +223,16 @@ curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/f88c19
 python3 patch.py server-original.mjs server-test.mjs
 python3 test_exchange.py server-test.mjs
 ```
+
+
+## 동시 구매 충돌 테스트 (모의 CAS 저장소)
+
+`test_exchange_concurrency.py`는 시험 패치에서 **실제 구매 핸들러를 추출**한 뒤 동일 세션·동일 revision을 읽은 두 요청을 동시에 재개합니다. 모의 `Pe()`는 revision 비교 후 단 한 요청의 데이터만 채택합니다. 성공한 요청 ID를 다시 보내면 중복 차감되지 않는지도 확인합니다.
+
+```bash
+cd ~/gf-customizer-preview
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/1696587559967ce665c01e7d77c58a8e5ccbf864/experimental/live-integration/test_exchange_concurrency.py -o test_exchange_concurrency.py
+python3 test_exchange_concurrency.py server-test.mjs
+```
+
+**주의:** 모의 저장소의 revision-CAS 작동을 검사하는 테스트이지 운영 Marinara `Pe()`의 원자성을 입증하는 시험이 아닙니다. 또한 개발용 관리자 비밀키는 사용자별 세션 소유권 검증이 아닙니다. 운영 서버 패치 및 구매 버튼 활성화는 계속 금지합니다.
