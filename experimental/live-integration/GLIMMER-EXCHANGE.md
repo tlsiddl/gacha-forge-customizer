@@ -1,75 +1,50 @@
-# Glimmer 교환: 관리자용 구매 기능 (v0.5.0-dev)
+# Glimmer 교환 (서버 패치 v0.6.0-dev 기준)
 
-이 안내서는 Gacha Forge 1.8.12 및 Marinara Engine 2.5.0의 기존 개인 확장/서버 패치 구성을 기준으로 작성되었습니다.
+Gacha Forge 1.8.12 + Marinara Engine 2.5.0 기준입니다.
 
-## 안전 원칙
+## 보안 검토 결과 (2026-10-21)
 
-- 구매 API는 기본적으로 **꺼져 있습니다**. `GF_CUSTOMIZER_ENABLE_EXCHANGE=1`을 서버에 명시하고 24자 이상의 `GF_CUSTOMIZER_SECRET`을 지정해야만 사용할 수 있습니다.
-- 클라이언트는 구매 전용 비밀키를 **브라우저 저장소에 기록하지 않습니다**. 구매 시 요청 본문으로만 전송합니다. 개인 전용 HTTPS/Tailscale 연결과 서버 관리자 접근 보호가 필요합니다.
-- 이것은 **서버 관리자용 교환 기능**입니다. 현재 게임 계정별 소유자 인증을 제공하지 않으므로 다중 사용자 환경에서 공개 구매 기능으로 사용하지 마세요.
-- 서버는 `runId`, 캐릭터의 해당 run 소속 여부, 비주인공 캐릭터, 4/5성, 최대 패싯, 정수 잔액, 가격, 요청 ID를 검사합니다.
-- 구매 요청은 지갑 차감·캐릭터 지급·교환 횟수·요청 영수증을 **하나의 리비전 조건부 저장**으로 갱신합니다. 저장 충돌 시 요청이 실패합니다.
-- 동일 `requestId`가 재전송되면 동일한 구매 영수증을 재사용하며 추가 차감하지 않습니다. 네트워크 오류 시 새 요청 ID를 생성하지 않고 재시도할 수 있게 UI에서 대기 ID를 유지합니다.
-- 판매 가격: 4성 100 / 5성 300 Glimmer부터 시작, 성공할 때마다 해당 캐릭터의 다음 가격 +20.
-- 원본 패키지나 기존 게임 세이브 데이터를 직접 편집하지 않습니다.
+원본 소스(`Pasta-Devs/Marinara-Agents` 1.8.12, `server.mjs` SHA256 `6bd9ec1f…` 일치, `Pasta-Devs/Marinara-Engine` 2.5.0)를 직접 읽고, 실제 서버 모듈을 실행해 확인했습니다.
 
-## 벌처 패치 준비 (운영 반영 전)
+| 항목 | 결과 |
+|---|---|
+| 권한 | `/api/gacha-forge/*` 전체가 Marinara의 `requirePrivilegedAccess`를 거칩니다 (허용 호스트 → Basic Auth → 루프백이 아니면 `X-Admin-Secret`). 교환 API도 게임의 `/shop/buy`와 **같은 문**을 지납니다. |
+| 게임 소유자 | Gacha Forge에는 사용자별 소유 개념이 없습니다 (월드 목록 하나를 서버 관리자가 소유). 따라서 별도 소유권 검사는 존재할 수 없고, 위 관리자 게이트가 경계입니다. |
+| 별도 구매 비밀키 | 위 게이트와 중복이고, 화면 입력·요청 본문 전송이 오히려 노출 위험이라 **제거**했습니다. 켜는 스위치는 `GF_CUSTOMIZER_ENABLE_EXCHANGE=1` 하나입니다. |
+| 동시성 | 저장은 원본 `Pe()` → Marinara `update(expectedRevision)`이며, Marinara는 트랜잭션을 한 번에 하나씩 처리합니다(`file-backed-store.ts`). 실제 서버 모듈로 동시 20건·게임 상점 구매와 동시 실행을 돌려 이중 차감·유실 0건을 확인했습니다. |
+| 재시도 | 같은 요청 ID는 영수증으로 한 번만 처리됩니다. 영수증은 최근 200건만 보관합니다(무한 증가 방지). |
+| 판매 대상 (수정) | 이전 패치는 월드의 모든 4·5성 캐릭터 문서를 팔았기 때문에 **미래 픽업용으로 미리 만들어진 캐릭터도 살 수 있었습니다.** 이제 상시 풀 + 지난·현재 픽업 + 이미 보유한 캐릭터만 판매합니다. |
+| 지급 형태 | 신규 `{level:1,bondFights:0}`, 보유 시 `vf()` 패싯 +1 — 원본 소환·아이템 지급 코드와 같습니다. 구매 전 원본 `/shop/buy`처럼 `Zt()`(계정 정보 준비)를 호출합니다. |
 
-```bash
-cd /root/Marinara-Engine/gf-customizer-integration
+남은 전제: 서버가 공개 IP라면 Marinara의 `ADMIN_SECRET`과 HTTPS(또는 Tailscale 등)가 설정되어 있어야 합니다. 이것은 교환뿐 아니라 게임 전체의 전제입니다. 실제 운영 DB에서의 구매는 아직 해 보지 않았습니다.
 
-cp -p gf-customizer-edits.json gf-customizer-edits.pre-exchange.json
+## 서버 패치 갱신 (목록 개선 · 구매 준비, 구매는 계속 꺼짐)
 
-curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/main/experimental/live-integration/patch.py -o patch.exchange.py
-
-python3 patch.exchange.py server-original.mjs server-exchange.mjs \
-  --edits-output gf-customizer-edits.exchange.json
-
-docker exec -i marinara-engine-marinara-1 node --input-type=module --check < server-exchange.mjs
-
-python3 - <<'PY'
-import json
-from pathlib import Path
-data=json.loads(Path('gf-customizer-edits.exchange.json').read_text())
-src=Path('server-exchange.mjs').read_text()
-assert len(data['edits'])==14
-assert 'GF_CUSTOMIZER_ENABLE_EXCHANGE!=="1"' in src
-assert 'character.kind!=="character"||character.isProtagonist' in src
-assert 'const balance=Number(next.wallet.glimmer);' in src
-assert 'Kt=gfPity(U,Q,ne,m)' in src
-print('PASS: 14개 패치, 구매 안전 검사, 기존 천장 유지')
-PY
-```
-
-검사를 통과하기 전에 기존 `gf-customizer-edits.json`을 교체하지 마세요.
-
-## 배포 및 설정
-
-검증 후 기존 패치 파일을 백업한 상태로 새 JSON을 복사하고, 아래 기존 Compose 파일 **3개 모두**를 사용해 컨테이너를 재생성합니다.
+벌처에서 실행합니다. 기존 파일은 덮어쓰기 전에 백업합니다.
 
 ```bash
 cd /root/Marinara-Engine/gf-customizer-integration
-cp -p gf-customizer-edits.json gf-customizer-edits.pre-exchange-deploy.json
-cp gf-customizer-edits.exchange.json gf-customizer-edits.json
+curl -fL https://raw.githubusercontent.com/tlsiddl/gacha-forge-customizer/main/experimental/live-integration/patch.py -o patch.v060.py
+python3 patch.v060.py server-original.mjs server-v060.mjs --edits-output gf-customizer-edits.v060.json
+docker exec -i marinara-engine-marinara-1 node --input-type=module --check < server-v060.mjs && echo SYNTAX_OK
+cp -p gf-customizer-edits.json gf-customizer-edits.before-v060.json
+cp gf-customizer-edits.v060.json gf-customizer-edits.json
 cd /root/Marinara-Engine
-docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.gf-customizer.yml \
-  up -d --no-deps --force-recreate marinara
+docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.gf-customizer.yml up -d --no-deps --force-recreate marinara
+docker logs --tail 80 marinara-engine-marinara-1 2>&1 | grep -E "gf-customizer|gacha-forge@"
 ```
 
-로그에서 `[gf-customizer] applied 14 edits in memory`를 확인합니다. 기존 14개 패치의 교체이므로 항목 수는 늘어나지 않습니다.
+정상이면 `applied 14 edits in memory`와 `Activated and verified capability package gacha-forge@1.8.12`가 보입니다.
 
-개인 확장도 `experimental/live-integration`의 **v0.5.0-dev**를 설치/갱신해야 구매 UI가 나타납니다.
-
-구매 활성화는 별도 작업입니다. 구매 기능을 켜려면 Docker Compose에 `GF_CUSTOMIZER_ENABLE_EXCHANGE=1`과 충분히 긴 비밀키를 안전하게 전달해야 합니다. 비밀키를 GitHub, 채팅 로그, 스크린샷 또는 공개 Compose 파일에 넣지 마세요. 활성화 전에는 재화가 실제로 변경되는 테스트를 진행하지 마세요.
-
-## 롤백
+되돌리기:
 
 ```bash
 cd /root/Marinara-Engine/gf-customizer-integration
-cp gf-customizer-edits.pre-exchange-deploy.json gf-customizer-edits.json
+cp gf-customizer-edits.before-v060.json gf-customizer-edits.json
 cd /root/Marinara-Engine
-docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.gf-customizer.yml \
-  up -d --no-deps --force-recreate marinara
+docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.gf-customizer.yml up -d --no-deps --force-recreate marinara
 ```
 
-**미검증 범위:** 실제 구매 트랜잭션 통합 테스트, 동시 요청 경쟁 상태의 실제 저장소 동작, 다중 사용자 소유권 인증. 운영 사용 전 별도 검증이 필요합니다.
+## 구매 켜기 (원할 때만)
+
+`docker-compose.gf-customizer.yml`의 `environment:`에서 `GF_CUSTOMIZER_ENABLE_EXCHANGE` 값을 `"1"`로 바꾸고(항목이 없으면 같은 형식으로 추가; `GF_CUSTOMIZER_SECRET`은 이제 쓰지 않으므로 그대로 두어도 무방) 위와 같은 `up -d --no-deps --force-recreate marinara`를 실행합니다. 끌 때는 `"0"`. 켜기 전에 `/root/Marinara-Engine` 데이터 백업(`backup_live_data.sh`)을 권장합니다.

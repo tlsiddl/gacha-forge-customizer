@@ -22,7 +22,7 @@ function visible(el) {
   for (let n = el; n; n = n.parentNode || n.host) {
     if (n.nodeType !== 1) continue;
     if (n.style.display === "none") return false;
-    if (n.hasAttribute("hidden") && (!n.style.display || n.closest(".gfc-root"))) return false;
+    if (n.hasAttribute("hidden") && (!n.style.display || n.closest(".gfc-view"))) return false;
   }
   return true;
 }
@@ -56,11 +56,11 @@ function page(routes = {}) {
     <div class="gf-app"><div><button class="gf-fs-bar icon-button">⛶</button></div>
       <div data-screen="home">홈</div>
       <div data-screen="shop" style="display:none">
-        <nav class="sh-rail"><button class="sh-cat is-active" data-shop-cat="gems" aria-selected="true">젬</button><button class="sh-cat" data-shop-cat="pack" aria-selected="false">패키지</button></nav>
+        <nav class="sh-rail"><button class="sh-cat on" data-shop-cat="gems"><span class="sh-cat-nm">젬</span></button><button class="sh-cat" data-shop-cat="pack"><span class="sh-cat-nm">패키지</span></button></nav>
         <div class="sh-pane"><div class="sh-native" style="display:flex">원래 상점 목록</div></div>
       </div>
       <div data-screen="settings" style="display:none">
-        <nav class="st-rail"><button class="st-sect on" aria-selected="true">일반</button><button class="st-sect" aria-selected="false">화면</button></nav>
+        <nav class="st-rail"><button class="st-sect" aria-selected="true">일반</button><button class="st-sect" aria-selected="false">화면</button></nav>
         <div class="st-pane"><div class="st-native">원래 설정</div></div>
       </div>
     </div>`;
@@ -107,8 +107,9 @@ async function openShop(p) {
     const p = page(baseRoutes()); p.load(CUST);
     p.show("shop"); await sleep(250);
     assert.strictEqual(p.root.querySelectorAll("[data-gf-customizer-tab]").length, 1);
-    assert.strictEqual(p.q("[data-gf-customizer-tab]").textContent, "Glimmer 교환");
-    assert.ok(!p.q("[data-gf-customizer-tab]").classList.contains("is-active"), "copied the 'selected' class from the sample tab");
+    const tab = p.q("[data-gf-customizer-tab]");
+    assert.ok(tab.classList.contains("sh-cat") && !tab.classList.contains("on"));
+    assert.strictEqual(tab.querySelector(".sh-cat-nm").textContent, "Glimmer 교환");
     p.close();
   });
 
@@ -119,13 +120,13 @@ async function openShop(p) {
     assert.deepStrictEqual(p.catalogs().map((c) => c.body.runId), ["run-a"]);
     const v = p.shopView();
     assert.ok(v && visible(v), "shop view not visible");
-    assert.ok(v.textContent.includes("현재 월드: 월드 A"), v.textContent);
-    assert.ok(v.textContent.includes("Glimmer 1,234"));
+    assert.strictEqual(v.querySelector(".gfc-world").textContent, "월드 A");
+    assert.ok(v.textContent.includes("구매 꺼짐"));
     assert.strictEqual(visible(v.querySelector(".gfc-manual")), false, "manual Run ID box still shown");
-    assert.strictEqual(visible(v.querySelector('input[type="password"]')), false, "secret box shown while purchase disabled");
-    assert.strictEqual(v.querySelectorAll(".gfc-item").length, 3);
-    assert.strictEqual(v.querySelectorAll(".gfc-item button").length, 0, "purchase buttons shown while disabled");
-    assert.ok(v.querySelector(".gfc-item .gfc-name").textContent.includes("★5"), "5★ not sorted first");
+    assert.strictEqual(v.querySelectorAll('input[type="password"]').length, 0, "no secret field any more");
+    assert.strictEqual(v.querySelectorAll(".sh-card").length, 3);
+    assert.ok([...v.querySelectorAll(".sh-card .sh-buy")].every((b) => b.disabled), "purchase must be disabled");
+    assert.strictEqual(v.querySelector(".sh-card .sh-name").textContent, "아린", "5★ not sorted first");
     assert.strictEqual(v.querySelectorAll("img").length, 1, "unsafe portrait URL rendered");
     assert.strictEqual(visible(p.q(".sh-native")), false, "native shop content not hidden");
     p.close();
@@ -135,7 +136,8 @@ async function openShop(p) {
     const p = page(baseRoutes()); p.load(CUST); await p.game("/api/gacha-forge/beat", "run-a"); await sleep(20);
     await openShop(p); await sleep(80);
     const labels = [...p.shopView().querySelectorAll("button")].filter(visible).map((b) => b.textContent);
-    assert.deepStrictEqual(labels, ["새로고침"], JSON.stringify(labels));
+    assert.ok(!labels.includes("설정") && !labels.includes("Glimmer 상점"), JSON.stringify(labels));
+    assert.strictEqual(p.root.querySelectorAll("[data-gf-customizer-tab]").length, 1);
     p.close();
   });
 
@@ -156,7 +158,7 @@ async function openShop(p) {
     await openShop(p); await sleep(80);
     await p.game("/api/gacha-forge/beat", "run-b"); await sleep(200);
     assert.deepStrictEqual(p.catalogs().map((c) => c.body.runId), ["run-a", "run-b"]);
-    assert.ok(p.shopView().querySelector(".gfc-item").textContent.length > 0);
+    assert.ok(p.shopView().querySelector(".sh-card .sh-name").textContent.length > 0);
     p.close();
   });
 
@@ -176,6 +178,20 @@ async function openShop(p) {
     p.close();
   });
 
+  await test("다른 기기가 바꾼 서버 활성 월드(/state)가 이 화면의 월드를 덮어쓰지 않음 · {ok:false} 응답 무시", async () => {
+    const p = page(baseRoutes({
+      "/api/gacha-forge/state": () => [{ ok: true, activeRun: { runId: "run-b", name: "월드 B" }, activeRunId: "run-b" }],
+      "/api/gacha-forge/run/activate": () => [{ ok: false, error: "not-found" }],
+    }));
+    p.load(CUST);
+    await p.game("/api/gacha-forge/beat", "run-a"); await sleep(20);
+    await (await p.win.fetch("/api/gacha-forge/state")).json(); await sleep(20);
+    await p.game("/api/gacha-forge/run/activate", "run-zz"); await sleep(20);
+    await openShop(p); await sleep(80);
+    assert.deepStrictEqual(p.catalogs().map((c) => c.body.runId), ["run-a"]);
+    p.close();
+  });
+
   await test("게임 코드가 응답 본문을 그대로 읽을 수 있음 (관찰이 응답을 소비하지 않음)", async () => {
     const p = page(baseRoutes()); p.load(CUST); if (QUEST) p.load(QUEST);
     const r = await p.win.fetch("/api/gacha-forge/state");
@@ -189,7 +205,7 @@ async function openShop(p) {
     p.load(CUST); await p.game("/api/gacha-forge/beat", "run-gone"); await sleep(20);
     await openShop(p); await sleep(80);
     const v = p.shopView();
-    assert.ok(v.textContent.includes("서버에서 이 월드를 찾지 못했습니다"), v.textContent);
+    assert.ok(v.textContent.includes("이 월드를 서버에서 찾지 못했습니다"), v.textContent);
     assert.ok(visible(v.querySelector(".gfc-manual")));
     assert.strictEqual(p.catalogs().length, 1);
     p.close();
@@ -208,7 +224,7 @@ async function openShop(p) {
     await openShop(p); await sleep(60);
     assert.strictEqual(p.catalogs().length, 0);
     const v = p.shopView();
-    assert.ok(v.textContent.includes("현재 월드: 확인 전"));
+    assert.ok(v.textContent.includes("월드를 확인하는 중입니다"));
     v.querySelector(".gfc-manual input").value = "run-m";
     p.click(v.querySelector(".gfc-manual button")); await sleep(80);
     assert.deepStrictEqual(p.catalogs().map((c) => c.body.runId), ["run-m"]);
@@ -219,13 +235,12 @@ async function openShop(p) {
   await test("게임의 원래 탭을 누르면 원래 상점 화면 복원", async () => {
     const p = page(baseRoutes()); p.load(CUST); await p.game("/api/gacha-forge/beat", "run-a"); await sleep(20);
     const tab = await openShop(p);
-    assert.strictEqual(p.q('[data-shop-cat="gems"]').getAttribute("aria-selected"), "false");
+    assert.ok(!p.q('[data-shop-cat="gems"]').classList.contains("on") && tab.classList.contains("on"));
     p.click(p.q('[data-shop-cat="gems"]')); await sleep(200);
     assert.strictEqual(p.shopView(), null);
     assert.ok(visible(p.q(".sh-native")), "native content not restored");
     assert.strictEqual(p.q(".sh-native").style.display, "flex", "native inline display not restored exactly");
-    assert.strictEqual(p.q('[data-shop-cat="gems"]').getAttribute("aria-selected"), "true");
-    assert.strictEqual(tab.getAttribute("aria-selected"), "false");
+    assert.ok(p.q('[data-shop-cat="gems"]').classList.contains("on") && !tab.classList.contains("on"));
     // Reopen → one more fetch for the new opening (refreshes balance after pulls), not a loop.
     p.click(tab); await sleep(200);
     assert.strictEqual(p.catalogs().length, 2);
@@ -248,17 +263,19 @@ async function openShop(p) {
     p.show("settings"); await sleep(250);
     assert.strictEqual(p.root.querySelectorAll("[data-gf-customizer-tab]").length, 1);
     p.click(p.q("[data-gf-customizer-tab]")); await sleep(120);
-    const v = p.root.querySelector('[data-gfc-view="settings"]');
+    const v = p.root.querySelector('[data-gfc-view="set"]');
     assert.ok(v && visible(v));
     const gets = () => p.log.filter((e) => e.path.endsWith("/settings") && e.method === "GET").length;
     assert.strictEqual(gets(), 1);
-    const nums = v.querySelectorAll('input[type="number"]');
-    assert.strictEqual(nums[1].value, "50");
-    nums[1].value = "0";
-    p.click([...v.querySelectorAll("button")].find((b) => b.textContent === "서버에 적용")); await sleep(50);
-    assert.ok(v.textContent.includes("캐릭터 5성 천장 값은 1~100"));
+    const pity = v.querySelector('input[aria-label="캐릭터 5성 천장"]');
+    assert.strictEqual(pity.value, "50");
+    const saveBtn = [...v.querySelectorAll("button")].find((b) => b.textContent === "서버에 적용");
+    assert.ok(saveBtn.disabled, "nothing changed yet");
+    pity.value = "0"; pity.dispatchEvent(new p.win.Event("input", { bubbles: true }));
+    assert.ok(v.textContent.includes("1~100 사이로 입력해 주세요") && saveBtn.disabled);
+    p.click(saveBtn); await sleep(50);
     assert.strictEqual(p.log.filter((e) => e.method === "POST").length, 0);
-    nums[1].value = "60";
+    pity.value = "60"; pity.dispatchEvent(new p.win.Event("input", { bubbles: true }));
     p.click([...v.querySelectorAll("button")].find((b) => b.textContent === "서버에 적용")); await sleep(80);
     const post = p.log.find((e) => e.method === "POST" && e.path.endsWith("/settings"));
     assert.strictEqual(post.body.settings.characterPity, 60);
@@ -266,27 +283,29 @@ async function openShop(p) {
     p.close();
   });
 
-  await test("구매 활성화 응답일 때만 비밀키 입력·구매 버튼 표시, 같은 캐릭터 재시도는 같은 요청 ID", async () => {
+  await test("구매가 켜진 응답일 때만 구매 버튼 활성 · 두 번 눌러야 구매 · 충돌 재시도는 같은 요청 ID", async () => {
     let n = 0;
     const p = page(baseRoutes({
       "/api/gacha-forge/gf-customizer/exchange/catalog": (b) => [{ ok: true, glimmer: 500, exchangeEnabled: true, characters: characters(b.runId) }],
-      "/api/gacha-forge/gf-customizer/exchange": () => (++n === 1 ? [{ ok: false, error: "write-conflict", retry: true }] : [{ ok: true, replayed: false }]),
+      "/api/gacha-forge/gf-customizer/exchange": () => (++n === 1 ? [{ ok: false, error: "write-conflict", retry: true }] : [{ ok: true, isNew: true, wallet: { glimmer: 200 } }]),
     }));
     p.load(CUST); await p.game("/api/gacha-forge/beat", "run-a"); await sleep(20);
     await openShop(p); await sleep(80);
     const v = p.shopView();
-    assert.ok(visible(v.querySelector('input[type="password"]')));
-    const buttons = [...v.querySelectorAll(".gfc-item button")];
-    // sorted ★5 first: 아린(300, 구매 가능) · 채원(최대 패싯) · 보라(★4)
-    assert.deepStrictEqual(buttons.map((b) => [b.closest(".gfc-item").querySelector(".gfc-name").textContent, b.disabled]),
-      [["★5 아린", false], ["★5 채원", true], ["★4 보라", false]]);
-    v.querySelector('input[type="password"]').value = "x".repeat(30);
-    p.click(buttons[0]); await sleep(80);
-    p.click(buttons[0]); await sleep(120);
-    const ex = p.log.filter((e) => e.path.endsWith("/gf-customizer/exchange"));
-    assert.strictEqual(ex.length, 2);
-    assert.strictEqual(ex[0].body.requestId, ex[1].body.requestId);
-    assert.strictEqual(ex[0].body.runId, "run-a");
+    const row = (name) => [...v.querySelectorAll(".sh-card")].find((c) => c.querySelector(".sh-name").textContent === name);
+    assert.strictEqual(row("채원").querySelector(".sh-buy"), null, "max facet shows a state, not a button");
+    assert.strictEqual(row("아린").querySelector(".sh-buy").disabled, false);
+    const ex = () => p.log.filter((e) => e.path.endsWith("/gf-customizer/exchange"));
+    p.click(row("아린").querySelector(".sh-buy")); await sleep(30);
+    assert.strictEqual(ex().length, 0, "first tap only arms");
+    p.click(row("아린").querySelector(".sh-buy")); await sleep(80);
+    assert.strictEqual(ex().length, 1);
+    assert.ok(v.textContent.includes("다시 눌러 주세요"));
+    p.click(row("아린").querySelector(".sh-buy")); await sleep(30);
+    p.click(row("아린").querySelector(".sh-buy")); await sleep(120);
+    assert.strictEqual(ex().length, 2);
+    assert.strictEqual(ex()[0].body.requestId, ex()[1].body.requestId);
+    assert.strictEqual(ex()[0].body.secret, undefined, "no secret is sent");
     assert.strictEqual(p.catalogs().length, 2, "list not refreshed after purchase");
     p.close();
   });

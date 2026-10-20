@@ -3,8 +3,8 @@
   "version": 1,
   "config": {
     "name": "Gacha Forge · Customizer",
-    "version": "0.5.2-dev",
-    "description": "가챠포지 설정·상점 화면에 통합. 월드 자동 인식(퀘스트 확장과 공존), Glimmer 교환 목록 자동 조회. 구매는 서버에서 활성화하기 전까지 비활성.",
+    "version": "0.6.0-dev",
+    "description": "가챠포지 설정·상점에 게임 디자인 그대로 통합(가로 화면). 월드 자동 인식, Glimmer 캐릭터 교환(서버에서 켤 때만 구매).",
     "runtime": "client",
     "capabilities": [
       "full_page_access"

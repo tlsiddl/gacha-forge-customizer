@@ -12,15 +12,19 @@ assert(begin>=0&&end>begin,'exchange route boundaries not found');
 const route=edit.new.slice(begin,end);
 let handler;
 let saved,revision,saveCalls,allowSave,card,accessAllowed;
-const secret='isolated-test-secret-123456789';
 const runId='run-isolated',characterId=runId+':unit:c1';
-const env={GF_CUSTOMIZER_ENABLE_EXCHANGE:'1',GF_CUSTOMIZER_SECRET:secret};
+const env={GF_CUSTOMIZER_ENABLE_EXCHANGE:'1'};
+let released=true;
 const context={
  s:{post(name,fn){assert.equal(name,'/gf-customizer/exchange');handler=fn;}},
  process:{env},
  l:x=>typeof x==='string'?x:'',
  be:async()=>({data:{}}),Ae:()=>accessAllowed,
  Gn:async()=>card,
+ Zt:async()=>({level:1}),
+ Kr:async()=>({five:[],four:released?[characterId,runId+':unit:c2']:[]}),
+ ht:()=>({seq:1}),
+ a:{getById:async()=>null},n:{id:'gacha-forge'},le:(r,k)=>r+':banner:'+k,
  pe:async()=>({doc:{revision},data:structuredClone(saved)}),
  Pe:async(run,doc,next)=>{saveCalls++;if(!allowSave||doc.revision!==revision)return false;saved=structuredClone(next);revision++;return true;},
  At:w=>w, Xe:{glimmer:0}, Sn:5,
@@ -32,12 +36,12 @@ vm.runInNewContext(route,context);
 assert.equal(typeof handler,'function','route not registered');
 function reset({balance=500,facet=null,enabled=true,authorized=true,rarity=4}={}){
  saved={wallet:{glimmer:balance},roster:{}};if(facet!==null)saved.roster[characterId]={level:1,facet};
- revision=0;saveCalls=0;allowSave=true;accessAllowed=authorized;
+ revision=0;saveCalls=0;allowSave=true;accessAllowed=authorized;released=true;
  card={id:characterId,kind:'character',rarity,isProtagonist:false};
  env.GF_CUSTOMIZER_ENABLE_EXCHANGE=enabled?'1':'0';
 }
 async function buy(requestId='req-000000000000001',overrides={}){
- return handler({body:{runId,characterId,requestId,secret,...overrides}});
+ return handler({body:{runId,characterId,requestId,...overrides}});
 }
 async function main(){
  reset();
@@ -52,7 +56,7 @@ async function main(){
  reset();r=await buy('req-000000000000002',{characterId:'run-other:unit:c1'});assert.equal(r.error,'cross-run-character');assert.equal(saveCalls,0);console.log('PASS: cross-run character rejects');
  reset({enabled:false});r=await buy();assert.equal(r.error,'exchange-disabled');assert.equal(saveCalls,0);console.log('PASS: feature flag disabled rejects');
  reset({authorized:false});r=await buy();assert.equal(r.ok,false);assert.equal(saveCalls,0);console.log('PASS: invalid registry access rejects');
- reset();r=await buy('req-000000000000003',{secret:'invalid'});assert.equal(r.error,'unauthorized');assert.equal(saveCalls,0);console.log('PASS: invalid secret rejects');
+ reset();released=false;r=await buy('req-000000000000003');assert.equal(r.error,'not-released');assert.equal(saveCalls,0);console.log('PASS: unreleased (future banner) character rejects');
  reset();r=await buy();assert.equal(r.ok,true);r=await buy('req-000000000000001',{characterId:runId+':unit:c2'});assert.equal(r.error,'request-id-reused');console.log('PASS: request ID reuse with different character rejects');
  console.log('=== 10 offline purchase tests PASS; live game unchanged ===');
 }
