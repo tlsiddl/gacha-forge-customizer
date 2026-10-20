@@ -26,6 +26,8 @@ rep('var rb=[',boot+'var rb=[')
 rep('var Wu=336*60*60*1e3;','var Wu=336*60*60*1e3;') if False else None
 rep('days:Math.round(Wu/(1440*60*1e3))','days:r&&Number(r.endsAt)>Number(r.startedAt)?Math.max(1,Math.round((Number(r.endsAt)-Number(r.startedAt))/(1440*60*1e3))):GF_SETTINGS.bannerDays')
 rep('endsAt:n+Wu','endsAt:n+GF_SETTINGS.bannerDays*24*60*60*1e3')
+# Subsequent calendar rollover must use the configured duration, not the original 14-day constant.
+rep('endsAt:N.endsAt+Wu','endsAt:N.endsAt+GF_SETTINGS.bannerDays*24*60*60*1e3')
 # Calendar-banner adoption must carry the NEW featured clock into both cloned documents.
 rep('data:re.data}),Me=await Mt(le(s,`wpn:f${ye.seq}`),{packageId:n.id,kind:"banner",name:oe.name,description:oe.description,data:oe.data})',
     'data:{...re.data,startedAt:ye.startedAt,endsAt:ye.endsAt}}),Me=await Mt(le(s,`wpn:f${ye.seq}`),{packageId:n.id,kind:"banner",name:oe.name,description:oe.description,data:{...oe.data,startedAt:ye.startedAt,endsAt:ye.endsAt}})')
