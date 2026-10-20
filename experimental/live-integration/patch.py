@@ -32,6 +32,12 @@ rep('data:re.data}),Me=await Mt(le(s,`wpn:f${ye.seq}`),{packageId:n.id,kind:"ban
 rep('Kt=MA(U,Q,ne)','Kt=gfPity(U,Q,ne,m)')
 rep('RA(U,x.fiveId,ee,Y)','gfPick(U,x.fiveId,ee,Y)')
 rep('In.gained||(Pt=jg(!1,Ft.rarity))','In.gained||(Pt=(GF_SETTINGS["fullFacetGlimmer"+Ft.rarity]===0?jg(!1,Ft.rarity):GF_SETTINGS["fullFacetGlimmer"+Ft.rarity]))')
+# Both banner overview and selected-banner detail were still returning the original 80/74.
+# Keep real summon logic, banner list and banner detail aligned on the same settings.
+rep('return{count:Number(S.count)||0,soft:Ko,hard:yi,guaranteed:!!S.sinceFeatured}',
+    'return{count:Number(S.count)||0,soft:Math.max(1,(b.cat==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity)-6),hard:b.cat==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity,guaranteed:!!S.sinceFeatured}')
+rep('pity:{count:Number(O.count)||0,soft:Ko,hard:yi,guaranteed:!!O.sinceFeatured}',
+    'pity:{count:Number(O.count)||0,soft:Math.max(1,(g==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity)-6),hard:g==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity,guaranteed:!!O.sinceFeatured}')
 rep('pity:{count:U.count,soft:Ko,hard:yi,guaranteed:!!U.sinceFeatured}', 'pity:{count:U.count,soft:Math.min(m==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity,Math.max(1,(m==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity)-6)),hard:m==="wpn"?GF_SETTINGS.weaponPity:GF_SETTINGS.characterPity,guaranteed:!!U.sinceFeatured}')
 # Settings/catalog rely on Marinara's upstream /api/gacha-forge gateway administrator authorization.
 # Never expose these handlers through an unauthenticated mount. Purchase stays disabled.
