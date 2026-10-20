@@ -106,5 +106,5 @@
  const navigation=()=>scheduleMount();window.addEventListener('hashchange',navigation);window.addEventListener('popstate',navigation);
  // Infrequent fallback only when the game's root is replaced; no 700ms full DOM polling.
  interval=setInterval(()=>{if(disposed)return;if(!panel||!panel.isConnected)init();if(!host||!host.isConnected)observeHost();scheduleMount();},12000);
- window[KEY]=()=>{disposed=true;clearInterval(interval);observer?.disconnect();window.removeEventListener('hashchange',navigation);window.removeEventListener('popstate',navigation);restorePane();for(const t of document.querySelectorAll('[data-gf-customizer-tab]'))t.remove();button?.remove();panel?.remove();delete window[KEY];};
+ window[KEY]=()=>{disposed=true;if(window.fetch===observedGameFetch)window.fetch=priorGameFetch;observedRunListener=null;clearInterval(interval);observer?.disconnect();window.removeEventListener('hashchange',navigation);window.removeEventListener('popstate',navigation);restorePane();for(const t of document.querySelectorAll('[data-gf-customizer-tab]'))t.remove();button?.remove();panel?.remove();delete window[KEY];};
 })();
