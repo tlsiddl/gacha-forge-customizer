@@ -3,8 +3,8 @@
   "version": 1,
   "config": {
     "name": "Gacha Forge · Customizer",
-    "version": "0.3.0-dev",
-    "description": "가챠포지 배너·천장·중복 보상 설정 시험판; Glimmer 상점은 조회 전용이며 구매 비활성화",
+    "version": "0.4.0-dev",
+    "description": "가챠포지 설정·상점 내부 통합 시험판; 교환 구매는 비활성화",
     "runtime": "client",
     "capabilities": [
       "full_page_access"
