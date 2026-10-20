@@ -17,6 +17,8 @@ for t in test_rules.py test_banner_rotation.py test_banner_persistence.py test_e
   if [ ! -f "$t" ]; then echo "MISSING TEST: $t"; exit 3; fi
   if [ "$t" = test_storage_contract.py ]; then
     python3 "$t" server-original.mjs --container "$CONTAINER"
+  elif [ "$t" = test_banner_rotation.py ]; then
+    python3 "$t" server-original.mjs server-test.mjs --container "$CONTAINER"
   else
     python3 "$t" server-test.mjs --container "$CONTAINER"
   fi
