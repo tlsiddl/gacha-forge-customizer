@@ -45,7 +45,7 @@ rep('pity:{count:U.count,soft:Ko,hard:yi,guaranteed:!!U.sinceFeatured}', 'pity:{
 # Never expose these handlers through an unauthenticated mount. Purchase stays disabled.
 # Authenticated live settings update. The host request handler is not yet confirmed to expose headers;
 # use a body secret, sent transiently and NEVER stored client-side. Block if secret absent.
-route='''s.get("/gf-customizer/settings",async()=>({ok:!0,settings:GF_SETTINGS})),s.post("/gf-customizer/settings",async p=>{const body=p&&p.body||{};try{const settings=gfSave(body.settings);return{ok:!0,settings}}catch(e){return{ok:!1,error:"invalid-settings",message:String(e.message||e)}}}),'''
+route='''s.get("/gf-customizer/settings",async()=>({ok:!0,settings:GF_SETTINGS})),s.post("/gf-customizer/settings",async p=>{const body=p&&p.body||{};let settings;try{settings=gfNormalize(body.settings)}catch(e){return{ok:!1,error:"invalid-settings",message:String(e.message||e)}}try{return{ok:!0,settings:gfSave(settings)}}catch(e){console.error("[gf-customizer] settings save failed",e);return{ok:!1,error:"settings-storage"}}}),'''
 # Character-only Glimmer exchange. One optimistic-concurrency session write for debit + roster.
 # Authorization is Marinara's own gate for every /api/gacha-forge route (the same one /shop/buy relies on);
 # GF_CUSTOMIZER_ENABLE_EXCHANGE=1 is the on switch. Only released units (standard pool, past and current
