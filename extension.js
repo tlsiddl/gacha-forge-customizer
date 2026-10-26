@@ -120,6 +120,7 @@
     "write-conflict": "게임이 같은 순간에 저장 중이었습니다. 다시 눌러 주세요.",
     "request-id-reused": "요청이 꼬였습니다. 목록을 새로고침해 주세요.",
     "invalid-settings": "설정 값이 허용 범위를 벗어났습니다.",
+    "settings-storage": "서버가 설정 파일을 저장하지 못했습니다. 서버 로그와 데이터 폴더의 쓰기 권한을 확인해 주세요.",
     unauthorized: "서버 패치가 이전 버전입니다. 서버 패치를 업데이트해 주세요.",
     "bad-request": "요청이 올바르지 않습니다.",
   };
@@ -138,7 +139,7 @@
     }
     let data = null;
     try { data = await response.json(); } catch {}
-    if (response.status === 404) throw Object.assign(Error("서버에 커스터마이저 패치가 적용되어 있지 않습니다."), { code: "missing" });
+    if (response.status === 404) throw Object.assign(Error("설정 API가 HTTP 404를 반환했습니다. 패치가 모든 서버 프로세스에 적용됐는지, 요청 경로가 올바른지 확인해 주세요."), { code: "missing" });
     if (response.status === 401 || response.status === 403) throw Object.assign(Error("서버 권한 확인에 실패했습니다."), { code: "auth" });
     if (!response.ok || !data) throw Object.assign(Error("서버 오류가 발생했습니다 (HTTP " + response.status + ")."), { code: "http" });
     if (!data.ok) throw Object.assign(Error(ERRORS[data.error] || data.message || data.error || "서버 오류가 발생했습니다."), { code: data.error || "error", data });
