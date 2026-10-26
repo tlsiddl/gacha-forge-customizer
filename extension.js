@@ -125,25 +125,35 @@
     "bad-request": "요청이 올바르지 않습니다.",
   };
   async function callApi(url, method, body) {
-    let response;
-    try {
-      response = await fetch(url, {
-        method,
-        credentials: "same-origin",
-        headers: headers(!!body),
-        // bytes, not a string: identical on the wire, invisible to other extensions' fetch observers
-        body: body ? new TextEncoder().encode(JSON.stringify(body)) : undefined,
-      });
-    } catch {
-      throw Object.assign(Error("서버에 연결하지 못했습니다."), { code: "network" });
+    // A temporarily unpatched backend instance can return 404 while others are ready.
+    // Retry only reads: never replay settings updates or character purchases.
+    const retryMissing = method === "GET" && url === SETTINGS_API;
+    for (let attempt = 0; ; attempt++) {
+      let response;
+      try {
+        response = await fetch(url, {
+          method,
+          credentials: "same-origin",
+          headers: headers(!!body),
+          cache: "no-store",
+          // bytes, not a string: identical on the wire, invisible to other extensions' fetch observers
+          body: body ? new TextEncoder().encode(JSON.stringify(body)) : undefined,
+        });
+      } catch {
+        throw Object.assign(Error("서버에 연결하지 못했습니다."), { code: "network" });
+      }
+      if (response.status === 404 && retryMissing && attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+        continue;
+      }
+      let data = null;
+      try { data = await response.json(); } catch {}
+      if (response.status === 404) throw Object.assign(Error("설정 API가 반복해서 HTTP 404를 반환했습니다. 서버 패치 적용 상태와 API 라우팅을 확인해 주세요."), { code: "missing" });
+      if (response.status === 401 || response.status === 403) throw Object.assign(Error("서버 권한 확인에 실패했습니다."), { code: "auth" });
+      if (!response.ok || !data) throw Object.assign(Error("서버 오류가 발생했습니다 (HTTP " + response.status + ")."), { code: "http" });
+      if (!data.ok) throw Object.assign(Error(ERRORS[data.error] || data.message || data.error || "서버 오류가 발생했습니다."), { code: data.error || "error", data });
+      return data;
     }
-    let data = null;
-    try { data = await response.json(); } catch {}
-    if (response.status === 404) throw Object.assign(Error("설정 API가 HTTP 404를 반환했습니다. 패치가 모든 서버 프로세스에 적용됐는지, 요청 경로가 올바른지 확인해 주세요."), { code: "missing" });
-    if (response.status === 401 || response.status === 403) throw Object.assign(Error("서버 권한 확인에 실패했습니다."), { code: "auth" });
-    if (!response.ok || !data) throw Object.assign(Error("서버 오류가 발생했습니다 (HTTP " + response.status + ")."), { code: "http" });
-    if (!data.ok) throw Object.assign(Error(ERRORS[data.error] || data.message || data.error || "서버 오류가 발생했습니다."), { code: data.error || "error", data });
-    return data;
   }
   function newRequestId() {
     if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
