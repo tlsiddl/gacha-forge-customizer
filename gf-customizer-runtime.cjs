@@ -42,7 +42,7 @@ if(process.env.GF_CUSTOMIZER_HOOK_TEST!=='1'){
       process.stderr.write('[gf-customizer] fail closed: '+transformed.error+' #'+transformed.index+'; existing loaders preserved\n');
       return result;
     }
-    process.stderr.write('[gf-customizer] applied '+recipe.edits.length+' edits in memory, preserving upstream hook output\n');
+    process.stderr.write('[gf-customizer] applied '+recipe.edits.length+' edits in memory (pid='+process.pid+', target='+filename+'), preserving upstream hook output\n');
     return{...result,source:transformed.source,shortCircuit:true};
    }});
    process.stderr.write('[gf-customizer] hook registered (no package files changed)\n');
